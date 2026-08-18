@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧠 Parkinson's Disease Detection - v5.0 Advanced</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Aptos', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(211, 177, 138, 0.18), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(95, 122, 132, 0.16), transparent 28%),
+        linear-gradient(180deg, #f5efe7 0%, #edf1ee 100%);
+      min-height: 100vh;
+      padding: 20px;
+      overflow-x: hidden;
+      color: #24313a;
+    }
+
+    .main-wrapper {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header-premium {
+      background: rgba(255, 255, 255, 0.82);
+      border-radius: 28px;
+      padding: 44px 40px;
+      margin-bottom: 30px;
+      box-shadow: 0 22px 55px rgba(35, 46, 53, 0.10);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 40px;
+      border: 1px solid rgba(93, 115, 126, 0.12);
+      backdrop-filter: blur(14px);
+    }
+
+    .header-content h1 {
+      font-size: clamp(34px, 4vw, 50px);
+      color: #1f2d36;
+      margin-bottom: 15px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .header-content p {
+      color: #5e6c74;
+      font-size: 16px;
+      margin-bottom: 10px;
+      max-width: 58ch;
+    }
+
+    .brain-3d-container {
+      width: 200px;
+      height: 200px;
+      background: linear-gradient(135deg, #d8c0a8 0%, #7f9a91 100%);
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 84px;
+      animation: float 6s ease-in-out infinite;
+      box-shadow: 0 18px 35px rgba(85, 103, 112, 0.18);
+      position: relative;
+    }
+
+    .brain-3d-container::before {
+      content: '';
+      position: absolute;
+      inset: -14px;
+      border: 1px solid rgba(120, 138, 145, 0.25);
+      border-radius: 36px;
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotateZ(0deg); }
+      50% { transform: translateY(-20px) rotateZ(5deg); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.3; }
+    }
+
+    /* Main grid layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 24px;
+      padding: 35px;
+      box-shadow: 0 14px 38px rgba(35, 46, 53, 0.08);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid rgba(93, 115, 126, 0.10);
+    }
+
+    .panel:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 24px 52px rgba(35, 46, 53, 0.12);
+    }
+
+    /* Upload Panel */
+    .upload-area {
+      border: 2px dashed rgba(127, 154, 145, 0.65);
+      border-radius: 18px;
+      padding: 50px 30px;
+      text-align: center;
+      background: linear-gradient(135deg, rgba(216, 192, 168, 0.12) 0%, rgba(127, 154, 145, 0.10) 100%);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .upload-area:hover {
+      border-color: #5f7a84;
+      background: linear-gradient(135deg, rgba(216, 192, 168, 0.18) 0%, rgba(127, 154, 145, 0.16) 100%);
+      transform: scale(1.02);
+    }
+
+    .upload-icon {
+      font-size: 60px;
+      color: #5f7a84;
+      margin-bottom: 15px;
+    }
+
+    .upload-text {
+      color: #24313a;
+      font-weight: 650;
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+
+    .upload-subtext {
+      color: #6f7c83;
+      font-size: 13px;
+    }
+
+    #audioFile {
+      display: none;
+    }
+
+    .file-info {
+      margin-top: 15px;
+      font-size: 13px;
+      color: #5f7a84;
+      font-weight: 600;
+    }
+
+    /* Buttons */
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 25px;
+    }
+
+    button {
+      flex: 1;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn-test {
+      background: linear-gradient(135deg, #638a74 0%, #4f725f 100%);
+      color: white;
+    }
+
+    .btn-test:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 28px rgba(79, 114, 95, 0.24);
+    }
+
+    .btn-analyze {
+      background: linear-gradient(135deg, #5f7a84 0%, #7f9a91 100%);
+      color: white;
+    }
+
+    .btn-analyze:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 36px rgba(95, 122, 132, 0.25);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Status alerts */
+    .alert {
+      padding: 15px 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      display: none;
+      font-weight: 600;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .alert.error {
+      background: #fbefef;
+      color: #a63a34;
+      border-left: 4px solid #c62828;
+    }
+
+    .alert.success {
+      background: #eef5ef;
+      color: #45695a;
+      border-left: 4px solid #2e7d32;
+    }
+
+    /* Loading spinner */
+    .loader {
+      display: none;
+      text-align: center;
+      padding: 50px;
+    }
+
+    .loader.active {
+      display: block;
+    }
+
+    .spinner-circle {
+      width: 60px;
+      height: 60px;
+      border: 5px solid #ece8e2;
+      border-top: 5px solid #5f7a84;
+      border-radius: 50%;
+      animation: spin 1.2s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .spinner-text {
+      color: #24313a;
+      font-weight: 650;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .progress-text {
+      color: #6f7c83;
+      font-size: 13px;
+    }
+
+    /* Results section */
+    .results-display {
+      display: none;
+    }
+
+    .results-display.active {
+      display: block;
+      animation: slideIn 0.5s ease;
+    }
+
+    /* Risk indicator */
+    .risk-card {
+      background: linear-gradient(180deg, #f7f3ee 0%, #eef3f0 100%);
+      border-radius: 22px;
+      padding: 34px 30px;
+      color: white;
+      text-align: center;
+      margin-bottom: 20px;
+      border: 1px solid rgba(95, 122, 132, 0.12);
+    }
+
+    .risk-kicker {
+      color: #5f7a84;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.8px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .risk-value {
+      font-size: 68px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      letter-spacing: -0.03em;
+      color: #1f2d36;
+    }
+
+    .risk-status {
+      font-size: 22px;
+      font-weight: 650;
+      margin-bottom: 10px;
+      color: #2d3d46;
+    }
+
+    .risk-description {
+      font-size: 14px;
+      color: #5f6e75;
+      line-height: 1.6;
+    }
+
+    .result-note {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.6);
+      color: #4e5d65;
+      font-size: 13px;
+      line-height: 1.55;
+      border: 1px solid rgba(95, 122, 132, 0.10);
+      text-align: left;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .stat-box {
+      background: linear-gradient(135deg, rgba(95, 122, 132, 0.07) 0%, rgba(216, 192, 168, 0.10) 100%);
+      border: 1px solid rgba(95, 122, 132, 0.16);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .stat-box:hover {
+      transform: translateY(-5px);
+      background: linear-gradient(135deg, rgba(95, 122, 132, 0.11) 0%, rgba(216, 192, 168, 0.14) 100%);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #6f7c83;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #24313a;
+    }
+
+    /* Charts full width */
+    .charts-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+
+    .chart-panel {
+      background: white;
+      border-radius: 22px;
+      padding: 30px;
+      box-shadow: 0 14px 38px rgba(35, 46, 53, 0.08);
+      border: 1px solid rgba(93, 115, 126, 0.10);
+    }
+
+    .chart-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #24313a;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-bottom: 20px;
+    }
+
+    /* Feature analysis */
+    .features-section {
+      background: white;
+      border-radius: 22px;
+      padding: 30px;
+      box-shadow: 0 14px 38px rgba(35, 46, 53, 0.08);
+      border: 1px solid rgba(93, 115, 126, 0.10);
+    }
+
+    .feature-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #24313a;
+      margin-bottom: 20px;
+    }
+
+    .feature-row {
+      margin-bottom: 18px;
+    }
+
+    .feature-label {
+      font-size: 13px;
+      color: #4f5f67;
+      margin-bottom: 6px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: #e0e0e0;
+      border-radius: 5px;
+      overflow: hidden;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #5f7a84 0%, #7f9a91 100%);
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 5px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .header-premium {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      .brain-3d-container {
+        width: 150px;
+        height: 150px;
+        font-size: 70px;
+      }
+
+      .charts-section {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .header-content h1 {
+        font-size: 32px;
+      }
+
+      button {
+        font-size: 12px;
+      }
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      margin-top: 25px;
+    }
+
+    .btn-restart {
+      flex: 1;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, #5f7a84 0%, #7f9a91 100%);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-restart:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 36px rgba(95, 122, 132, 0.25);
+    }
+
+    .input-hint {
+      margin-top: 10px;
+      color: #6f7c83;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .record-controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .btn-record {
+      flex: 1;
+      min-width: 140px;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #edf1ee;
+      color: #2d3d46;
+      transition: all 0.2s ease;
+    }
+
+    .btn-record:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(35, 46, 53, 0.10);
+    }
+
+    .btn-record.active {
+      background: #b54b45;
+      color: #fff;
+    }
+
+    .record-status {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #5e6c74;
+      font-weight: 600;
+    }
+
+    .record-preview {
+      margin-top: 10px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-wrapper">
+    <!-- Header -->
+    <div class="header-premium">
+      <div class="header-content">
+        <h1>Parkinson's Voice Review</h1>
+        <p>A calmer screening interface for checking subtle voice patterns in recorded speech.</p>
+        <p style="font-size: 13px; color: #6f7c83; margin-top: 10px;">Advanced ensemble analysis with a more human-centered presentation.</p>
+      </div>
+      <div class="brain-3d-container"><i class="fas fa-wave-square" aria-hidden="true"></i></div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard-grid">
+      <!-- Left Panel: Upload -->
+      <div class="panel">
+        <div id="errorMsg" class="alert error"></div>
+        <div id="successMsg" class="alert success"></div>
+
+        <div id="uploadSection">
+          <h3 style="margin-bottom: 20px; color: #24313a; font-size: 16px;">Upload a voice sample</h3>
+          <div class="upload-area" onclick="document.getElementById('audioFile').click()">
+            <div style="position: relative; z-index: 1;">
+              <div class="upload-icon"><i class="fas fa-microphone-alt" aria-hidden="true"></i></div>
+              <div class="upload-text">Click to choose a file</div>
+              <div class="upload-subtext">WAV or MP3 voice recordings work best when they are clear, steady, and short.</div>
+            </div>
+          </div>
+          <input type="file" id="audioFile" accept=".wav,.mp3,audio/wav,audio/mpeg,audio/mp3">
+          <div class="file-info" id="fileName"></div>
+
+          <div class="record-controls">
+            <button class="btn-record" id="startRecordBtn" type="button" onclick="startRecording()">
+              <i class="fas fa-circle"></i> Start Voice
+            </button>
+            <button class="btn-record" id="stopRecordBtn" type="button" onclick="stopRecording()" disabled>
+              <i class="fas fa-stop"></i> Stop
+            </button>
+          </div>
+          <div class="record-status" id="recordStatus">Or record live voice using your microphone.</div>
+          <audio id="recordPreview" class="record-preview" controls style="display:none;"></audio>
+
+          <div class="input-hint">If a recording scores high, try a second pass in a quieter environment before treating it as final.</div>
+
+          <div class="button-group">
+            <button class="btn-test" onclick="testConnection()">
+              <i class="fas fa-plug"></i> Test
+            </button>
+            <button class="btn-analyze" id="analyzeBtn" onclick="analyzeAudio()" disabled>
+              <i class="fas fa-rocket"></i> Analyze
+            </button>
+          </div>
+        </div>
+
+        <div id="loadingSpinner" class="loader">
+          <div class="spinner-circle"></div>
+          <div class="spinner-text">Reading the voice sample...</div>
+          <div class="progress-text">Extracting acoustic features and comparing model outputs</div>
+        </div>
+      </div>
+
+      <!-- Right Panel: Results Preview -->
+      <div class="panel" id="resultPreview" style="display: none;">
+        <div class="results-display active">
+          <h3 style="margin-bottom: 20px; color: #24313a; font-size: 16px;">Screening summary</h3>
+
+          <div class="risk-card">
+            <div class="risk-kicker" id="riskKicker">Screening signal</div>
+            <div class="risk-value" id="riskValue">0%</div>
+            <div class="risk-status" id="riskStatus">Waiting for results</div>
+            <div class="risk-status" id="statusIcon" style="font-size: 22px; margin-top: 4px;">○</div>
+            <div class="risk-description" id="riskDesc">Processing your audio file...</div>
+            <div class="result-note" id="resultNote">The result is a screening signal, not a diagnosis. A second clear recording is often useful when the score is elevated.</div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-label"><i class="fas fa-brain"></i> <span id="nnLabel">Model 1</span></div>
+              <div class="stat-value" id="nnScore">--</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label"><i class="fas fa-chart-bar"></i> <span id="xgbLabel">Model 2</span></div>
+              <div class="stat-value" id="xgbScore">--</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label"><i class="fas fa-percent"></i> Confidence</div>
+              <div class="stat-value" id="confidence">--</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label"><i class="fas fa-list"></i> Key features</div>
+              <div class="stat-value" id="featuresCount">--</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div id="chartsSection" class="charts-section" style="display: none;">
+      <div class="chart-panel">
+        <div class="chart-title"><i class="fas fa-chart-pie"></i> Screening breakdown</div>
+        <div class="chart-container">
+          <canvas id="riskChart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-panel">
+        <div class="chart-title"><i class="fas fa-layer-group"></i> Model agreement</div>
+        <div class="chart-container">
+          <canvas id="ensembleChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features Analysis -->
+    <div id="featuresPanel" class="features-section" style="display: none;">
+      <div class="feature-title"><i class="fas fa-wave-square"></i> Voice Feature Analysis</div>
+
+      <div class="feature-row">
+        <div class="feature-label">
+          <i class="fas fa-microphone-alt"></i> Pitch Stability (Jitter)
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="jitterBar" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div class="feature-row">
+        <div class="feature-label">
+          <i class="fas fa-volume-up"></i> Amplitude Consistency (Shimmer)
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="shimmerBar" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div class="feature-row">
+        <div class="feature-label">
+          <i class="fas fa-music"></i> Voice Harmonicity (HNR)
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="hnrBar" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div class="feature-row">
+        <div class="feature-label">
+          <i class="fas fa-star"></i> Overall Quality Score
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="qualityBar" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn-restart" onclick="location.reload()">
+          <i class="fas fa-redo"></i> Analyze Another
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script>
+    const BACKEND = 'http://localhost:8000';
+    let riskChart = null;
+    let ensembleChart = null;
+    let mediaRecorder = null;
+    let recordingChunks = [];
+    let recordedAudioBlob = null;
+    let recordedAudioName = '';
+    let recordingStartMs = 0;
+
+    function normalizePercent(value) {
+      if (value === undefined || value === null || Number.isNaN(value)) {
+        return null;
+      }
+
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) {
+        return null;
+      }
+
+      return numeric <= 1 ? numeric * 100 : numeric;
+    }
+
+    function formatPercent(value) {
+      const normalized = normalizePercent(value);
+      return normalized === null ? '--' : normalized.toFixed(1) + '%';
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = '❌ ' + msg;
+      el.style.display = 'block';
+      document.getElementById('successMsg').style.display = 'none';
+    }
+
+    function showSuccess(msg) {
+      const el = document.getElementById('successMsg');
+      el.textContent = '✅ ' + msg;
+      el.style.display = 'block';
+      document.getElementById('errorMsg').style.display = 'none';
+    }
+
+    function showLoading(show) {
+      document.getElementById('loadingSpinner').classList.toggle('active', show);
+      document.getElementById('uploadSection').style.display = show ? 'none' : 'block';
+    }
+
+    document.getElementById('audioFile').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        recordedAudioBlob = null;
+        const preview = document.getElementById('recordPreview');
+        preview.style.display = 'none';
+        preview.src = '';
+        document.getElementById('recordStatus').textContent = 'Using uploaded file.';
+        document.getElementById('fileName').textContent = '✓ Selected: ' + file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+        document.getElementById('analyzeBtn').disabled = false;
+      }
+    });
+
+    function interleaveChannels(left, right) {
+      const out = new Float32Array(left.length + right.length);
+      let i = 0;
+      let j = 0;
+      while (i < out.length) {
+        out[i++] = left[j];
+        out[i++] = right[j];
+        j++;
+      }
+      return out;
+    }
+
+    function floatTo16BitPCM(output, offset, input) {
+      for (let i = 0; i < input.length; i++, offset += 2) {
+        const s = Math.max(-1, Math.min(1, input[i]));
+        output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+      }
+    }
+
+    function writeString(view, offset, string) {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    }
+
+    function audioBufferToWavBlob(audioBuffer) {
+      const numChannels = audioBuffer.numberOfChannels;
+      const sampleRate = audioBuffer.sampleRate;
+      const format = 1;
+      const bitDepth = 16;
+
+      const channelData = [];
+      for (let i = 0; i < numChannels; i++) {
+        channelData.push(audioBuffer.getChannelData(i));
+      }
+
+      const samples = numChannels === 2
+        ? interleaveChannels(channelData[0], channelData[1])
+        : channelData[0];
+
+      const blockAlign = numChannels * bitDepth / 8;
+      const byteRate = sampleRate * blockAlign;
+      const dataSize = samples.length * bitDepth / 8;
+      const buffer = new ArrayBuffer(44 + dataSize);
+      const view = new DataView(buffer);
+
+      writeString(view, 0, 'RIFF');
+      view.setUint32(4, 36 + dataSize, true);
+      writeString(view, 8, 'WAVE');
+      writeString(view, 12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, format, true);
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, byteRate, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, bitDepth, true);
+      writeString(view, 36, 'data');
+      view.setUint32(40, dataSize, true);
+      floatTo16BitPCM(view, 44, samples);
+
+      return new Blob([view], { type: 'audio/wav' });
+    }
+
+    async function convertBlobToWav(blob) {
+      const arrayBuffer = await blob.arrayBuffer();
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      try {
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+        return audioBufferToWavBlob(audioBuffer);
+      } finally {
+        await audioContext.close();
+      }
+    }
+
+    async function startRecording() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showError('Live recording is not supported in this browser');
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recordingChunks = [];
+        recordedAudioBlob = null;
+
+        const preferredType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'audio/webm';
+
+        mediaRecorder = new MediaRecorder(stream, { mimeType: preferredType });
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) {
+            recordingChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          (async () => {
+            try {
+              const rawBlob = new Blob(recordingChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+              const elapsedMs = Date.now() - recordingStartMs;
+
+              if (elapsedMs < 2500) {
+                document.getElementById('recordStatus').textContent = 'Recording too short. Please record at least 3 seconds.';
+                document.getElementById('analyzeBtn').disabled = true;
+                stream.getTracks().forEach(track => track.stop());
+                return;
+              }
+
+              recordedAudioBlob = await convertBlobToWav(rawBlob);
+              recordedAudioName = 'live_voice_' + Date.now() + '.wav';
+
+              const preview = document.getElementById('recordPreview');
+              preview.src = URL.createObjectURL(recordedAudioBlob);
+              preview.style.display = 'block';
+              document.getElementById('fileName').textContent = '✓ Live recording ready as WAV (' + (recordedAudioBlob.size / 1024).toFixed(0) + ' KB)';
+              document.getElementById('recordStatus').textContent = 'Live voice captured in WAV. Click Analyze to send it.';
+              document.getElementById('analyzeBtn').disabled = false;
+            } catch (err) {
+              recordedAudioBlob = null;
+              document.getElementById('recordStatus').textContent = 'Could not convert recording to WAV: ' + err.message;
+              showError('Live recording conversion failed. Please try WAV/MP3 upload.');
+              document.getElementById('analyzeBtn').disabled = true;
+            } finally {
+              stream.getTracks().forEach(track => track.stop());
+            }
+          })();
+        };
+
+        mediaRecorder.start();
+        recordingStartMs = Date.now();
+        document.getElementById('startRecordBtn').disabled = true;
+        document.getElementById('startRecordBtn').classList.add('active');
+        document.getElementById('stopRecordBtn').disabled = false;
+        document.getElementById('recordStatus').textContent = 'Recording... speak for 5-10 seconds, then press Stop.';
+        document.getElementById('audioFile').value = '';
+      } catch (e) {
+        showError('Microphone access failed: ' + e.message);
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      }
+
+      document.getElementById('startRecordBtn').disabled = false;
+      document.getElementById('startRecordBtn').classList.remove('active');
+      document.getElementById('stopRecordBtn').disabled = true;
+    }
+
+    function createCharts(data) {
+      const riskCtx = document.getElementById('riskChart').getContext('2d');
+      if (riskChart) riskChart.destroy();
+
+      const breakdown = data.risk_breakdown || {};
+      const riskPercent = normalizePercent(data.pd_probability ?? data.risk_percent ?? data.risk ?? 0) || 0;
+      const riskLabels = Object.keys(breakdown).length ? Object.keys(breakdown) : ['Lower signal', 'Elevated signal'];
+      const riskValues = Object.keys(breakdown).length ? Object.values(breakdown) : [Math.max(100 - riskPercent, 0), riskPercent];
+      
+      riskChart = new Chart(riskCtx, {
+        type: 'doughnut',
+        data: {
+          labels: riskLabels,
+          datasets: [{
+            data: riskValues,
+            backgroundColor: ['#7f9a91', '#d8c0a8', '#5f7a84'],
+            borderColor: 'white',
+            borderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } }
+        }
+      });
+
+      const ensCtx = document.getElementById('ensembleChart').getContext('2d');
+      if (ensembleChart) ensembleChart.destroy();
+
+      const modelPredictions = data.model_predictions || {};
+      const modelLabels = Object.keys(modelPredictions).length ? Object.keys(modelPredictions) : ['Signal', 'Other'];
+      const modelValues = Object.keys(modelPredictions).length ? Object.values(modelPredictions).map(normalizePercent) : [riskPercent, Math.max(100 - riskPercent, 0)];
+      
+      ensembleChart = new Chart(ensCtx, {
+        type: 'doughnut',
+        data: {
+          labels: modelLabels,
+          datasets: [{
+            data: modelValues,
+            backgroundColor: ['#5f7a84', '#7f9a91', '#d8c0a8'],
+            borderColor: 'white',
+            borderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } }
+        }
+      });
+    }
+
+    function showResults(data) {
+      const risk = normalizePercent(data.pd_probability ?? data.risk_percent ?? data.risk ?? 0) || 0;
+      const confidence = normalizePercent(data.confidence_score ?? data.confidence ?? 0) || 0;
+      const keyFeatures = data.key_features || {};
+      const modelPredictions = data.model_predictions || {};
+      const backendRisk = String(data.risk_level || '').toUpperCase();
+      const quality = data.audio_quality || {};
+
+      document.getElementById('riskValue').textContent = risk.toFixed(1) + '%';
+      // The ensemble members come from the backend metadata, so label the two
+      // headline cards from whatever models actually scored this sample.
+      const modelNames = Object.keys(modelPredictions);
+      const prettyModel = (name, fallback) => name
+        ? name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+        : fallback;
+      document.getElementById('nnLabel').textContent = prettyModel(modelNames[0], 'Model 1');
+      document.getElementById('xgbLabel').textContent = prettyModel(modelNames[1], 'Model 2');
+      document.getElementById('nnScore').textContent =
+        formatPercent(modelPredictions[modelNames[0]] ?? data.nn_score);
+      document.getElementById('xgbScore').textContent =
+        formatPercent(modelPredictions[modelNames[1]] ?? data.xgb_score);
+      document.getElementById('confidence').textContent = confidence.toFixed(1) + '%';
+      document.getElementById('featuresCount').textContent = Object.keys(keyFeatures).length || '--';
+
+      // Risk level
+      const status = document.getElementById('riskStatus');
+      const icon = document.getElementById('statusIcon');
+      const desc = document.getElementById('riskDesc');
+      const kicker = document.getElementById('riskKicker');
+      const note = document.getElementById('resultNote');
+
+      if (backendRisk.includes('RETEST')) {
+        status.textContent = 'Retest recommended';
+        status.style.color = '#8a642d';
+        icon.textContent = '◔';
+        desc.textContent = 'The model output is being treated as uncertain because recording quality or sample consistency was not ideal.';
+        kicker.textContent = 'Quality check';
+      } else if (backendRisk.includes('MODERATE')) {
+        status.textContent = 'Review suggested';
+        status.style.color = '#8a642d';
+        icon.textContent = '◔';
+        desc.textContent = 'This is a borderline screening signal. A second recording in quiet conditions is recommended before drawing conclusions.';
+        kicker.textContent = 'Screening signal';
+      } else if (risk < 30) {
+        status.textContent = 'Likely clear speech pattern';
+        status.style.color = '#45695a';
+        icon.textContent = '○';
+        desc.textContent = 'The sample is reading as low concern, though the score still reflects a screening model rather than a diagnosis.';
+        kicker.textContent = 'Screening signal';
+      } else if (risk < 70) {
+        status.textContent = 'Review suggested';
+        status.style.color = '#8a642d';
+        icon.textContent = '◔';
+        desc.textContent = 'There are some voice-pattern signals worth a second listen. A cleaner recording can help separate compression noise from the model signal.';
+        kicker.textContent = 'Screening signal';
+      } else {
+        status.textContent = 'Elevated screening signal';
+        status.style.color = '#a13f39';
+        icon.textContent = '●';
+        desc.textContent = 'The model is seeing a strong signal. Re-test with a clear recording in quiet surroundings before making a final judgment.';
+        kicker.textContent = 'Attention needed';
+      }
+
+      note.textContent = quality.retest_recommended
+        ? 'Audio quality limitations detected in this sample. Please retest with a cleaner 8-15 second recording in a quiet room before interpreting risk.'
+        : risk >= 70
+        ? 'Audio compression and background noise can push scores upward. Try a direct mic recording or clean WAV file before treating the result as conclusive.'
+        : 'This is a screening signal, not a diagnosis. If the voice sample was compressed or noisy, a cleaner recording can produce a more stable reading.';
+
+      // Feature bars
+      document.getElementById('jitterBar').style.width = Math.min(risk + 15, 100) + '%';
+      document.getElementById('shimmerBar').style.width = Math.min(risk + 10, 100) + '%';
+      document.getElementById('hnrBar').style.width = Math.max(100 - risk - 15, 0) + '%';
+      document.getElementById('qualityBar').style.width = Math.max(100 - risk - 10, 0) + '%';
+
+      showLoading(false);
+      document.getElementById('resultPreview').style.display = 'block';
+      document.getElementById('chartsSection').style.display = 'grid';
+      document.getElementById('featuresPanel').style.display = 'block';
+
+      createCharts(data);
+    }
+
+    async function testConnection() {
+      try {
+        const res = await fetch(BACKEND + '/health');
+        if (res.ok) {
+          showSuccess('Backend Connected! Models loaded and ready.');
+        } else {
+          showError('Backend error: ' + res.status);
+        }
+      } catch (e) {
+        showError('Cannot reach backend at ' + BACKEND);
+      }
+    }
+
+    async function analyzeAudio() {
+      const fileInput = document.getElementById('audioFile').files[0];
+      const selectedAudio = fileInput || recordedAudioBlob;
+      if (!selectedAudio) {
+        showError('Please upload WAV/MP3 or record live voice first');
+        return;
+      }
+
+      showLoading(true);
+
+      try {
+        const form = new FormData();
+        const uploadName = fileInput ? fileInput.name : (recordedAudioName || 'live_voice.webm');
+        form.append('file', selectedAudio, uploadName);
+        form.append('voice', selectedAudio, uploadName);
+
+        const res = await fetch(BACKEND + '/predict', { method: 'POST', body: form });
+
+        if (!res.ok) {
+          const error = await res.text();
+          showError('Error: ' + error);
+          showLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        showSuccess('Analysis Complete!');
+        showResults(data);
+      } catch (e) {
+        showError('Error: ' + e.message);
+        showLoading(false);
+      }
+    }
+
+    window.onload = testConnection;
+  </script>
+</body>
+</html>

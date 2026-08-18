@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head><title>Gait Motion Upload</title></head>
+<body style="font-family: sans-serif; padding: 20px;">
+  <h2>Upload Motion Clips and CSV for Gait Analysis</h2>
+  <form id="uploadForm">
+      <label>Motion Clip (Video):</label><br>
+      <input type="file" id="motionClip" accept="video/*"><br><br>
+      
+      <label>CSV Data:</label><br>
+      <input type="file" id="csvData" accept=".csv"><br><br>
+      
+      <button type="button" onclick="submitFiles()" style="padding: 10px; font-weight: bold;">Analyze</button>
+  </form>
+  <h3 id="result" style="color: blue;"></h3>
+
+  <script>
+  function submitFiles() {
+      const formData = new FormData();
+      const motionFile = document.getElementById('motionClip').files[0];
+      const csvFile = document.getElementById('csvData').files[0];
+      
+      if (motionFile) formData.append('motion_clip', motionFile);
+      if (csvFile) formData.append('csv_data', csvFile);
+      
+      document.getElementById('result').innerText = "Analyzing...";
+
+      fetch('http://localhost:8002/predict-gait', {
+          method: 'POST',
+          body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+          document.getElementById('result').innerText = `Prediction: ${data.prediction} (${data.pd_probability}%)`;
+      })
+      .catch(err => {
+          document.getElementById('result').innerText = "Error analyzing. Ensure backend is running.";
+      });
+  }
+  </script>
+</body>
+</html>

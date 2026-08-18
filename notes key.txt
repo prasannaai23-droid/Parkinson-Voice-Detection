@@ -1,0 +1,143 @@
+I’m checking the frontend and backend decision path now so I can remove the disclaimer cleanly and tell you the actual boundary rules the model is using, not a guess.
+
+No matches found. Your search pattern might be excluded completely by either the search.exclude settings or .*ignore files.
+If you believe that it should have results, you can check into the .*ignore files and the exclude setting (here are some excluded patterns for reference:[**/node_modules,**/bower_components,**/*.code-search]).
+Then if you want to include those files you can call the tool again by setting "includeIgnoredFiles" to true.
+
+Read [](file:///h%3A/Parkinson%20ML-Model/frontend/index.html#1-1), lines 1 to 420
+
+Read [](file:///h%3A/Parkinson%20ML-Model/backend/main.py#1-1), lines 1 to 360
+
+I found the backend’s scoring rules and one hard disclaimer string. I’m reading the rest of the confidence-scaling block and the frontend display code so I can remove the disclaimer without breaking the result UI, then I’ll give you the exact thresholds that are actually used.
+
+Read [](file:///h%3A/Parkinson%20ML-Model/backend/main.py#360-360), lines 360 to 436
+
+Read [](file:///h%3A/Parkinson%20ML-Model/frontend/index.html#420-420), lines 420 to 760
+
+Read [](file:///h%3A/Parkinson%20ML-Model/frontend/predict_advanced.html#360-360), lines 360 to 760
+
+I’ve located the on-page disclaimer block and the backend still emits a disclaimer field too. I’m going to remove both so the UI stops showing it and the API stops sending it back.
+
+Searched for text `disclaimer` (`Parkinson ML-Model` · `frontend/index.html`), 4 results
+
+Searched for text `disclaimer` (`Parkinson ML-Model` · `backend/main.py`), 1 result
+
+Searched for regex `risk < 30|risk < 60|jitter > 0.008|shimmer > 0.20|hnr > 18|confidence > 0.7|confidence > 0.55|confidence > 0.45` (`Parkinson ML-Model` · `backend/main.py`), 7 results
+
+I’ve got the exact disclaimer hooks. I’m reading the report-generation snippet once so I can remove that text without leaving a stale reference behind, then I’ll patch the UI and API response together.
+
+Read [](file:///h%3A/Parkinson%20ML-Model/frontend/index.html#760-760), lines 760 to 800
+
+Read [](file:///h%3A/Parkinson%20ML-Model/backend/main.py#300-300), lines 300 to 390
+
+I’ve got the exact edit targets. I’m removing the visible disclaimer block, the report disclaimer section, and the backend disclaimer field in one pass so the UI and payload stay aligned.
+
+Apply Patch
+
+The first patch failed on formatting, not content. I’m reapplying the same edit with the required patch metadata.
+
+Generating patch (42 lines) in [](file:///h%3A/Parkinson%20ML-Model/frontend/index.html), [](file:///h%3A/Parkinson%20ML-Model/backend/main.py)
+
+
+```
+
+```
+
+```
+
+```
+The edits are in. I’m doing a narrow verification pass now to make sure the disclaimer text is actually gone from the frontend and backend response path, then I’ll answer the threshold question directly from the code.
+
+Checked [](file:///h%3A/Parkinson%20ML-Model/backend/main.py), no problems found
+
+No matches found. Your search pattern might be excluded completely by either the search.exclude settings or .*ignore files.
+If you believe that it should have results, you can check into the .*ignore files and the exclude setting (here are some excluded patterns for reference:[**/node_modules,**/bower_components,**/*.code-search]).
+Then if you want to include those files you can call the tool again by setting "includeIgnoredFiles" to true.
+
+No matches found. Your search pattern might be excluded completely by either the search.exclude settings or .*ignore files.
+If you believe that it should have results, you can check into the .*ignore files and the exclude setting (here are some excluded patterns for reference:[**/node_modules,**/bower_components,**/*.code-search]).
+Then if you want to include those files you can call the tool again by setting "includeIgnoredFiles" to true.
+
+The disclaimer is removed from the UI and from the backend response. I also verified there are no remaining `disclaimer` references in index.html or main.py.
+
+How the model is working now:
+- The deployed backend uses a trained model on 215 acoustic features.
+- `jitter`, `shimmer`, `hnr`, and `f0_mean` are part of the extracted feature set, but they are not all hard-coded as direct pass/fail rules.
+- `f0_mean` is not used as a decision threshold in the backend logic. It is displayed, but the code does not classify based on a specific `f0_mean` cutoff.
+
+The actual hard thresholds in main.py are:
+- Compression / very low confidence:
+  - `jitter > 0.08` and `shimmer > 0.35`, or
+  - `jitter > 0.06` and `shimmer > 0.40`, or
+  - `hnr < 5`
+- Strong PD-like confidence:
+  - `jitter > 0.035` or `shimmer > 0.30`
+  - `jitter > 0.028` and `shimmer > 0.22`
+  - `jitter > 0.025` and `shimmer > 0.20`
+  - `jitter > 0.020` and `shimmer > 0.15`
+- Healthy-leaning signal:
+  - `jitter < 0.008` and `shimmer < 0.08` and `hnr > 20`
+
+For the fallback scorer, the boundary is basically:
+- Start at `score = 50`
+- Convert to probability with `pd_pred = score / 100`
+- So the practical class boundary is around `50%`
+- Then risk bands are:
+  - `< 15` very low
+  - `< 30` low
+  - `< 50` moderate
+  - `< 65` elevated
+  - `< 80` high
+  - `>= 80` very high
+
+So the short version is: there is no fixed `f0_mean` cutoff, and the real class boundary is the model’s learned probability, with `50%` as the main healthy-vs-PD split in the fallback logic.
+
+If you want, I can next make the frontend show these exact thresholds in a small “How it works” panel instead of hiding them in code.
+
+Made changes.
+
+
+
+
+
+I’m pulling the exact model path and feature definitions from the backend and feature extractor so I can explain the deployed system versus the training scripts cleanly, then I’ll turn that into plain language.
+
+Read [](file:///h%3A/Parkinson%20ML-Model/backend/main.py#1-1), lines 1 to 220
+
+Read [](file:///h%3A/Parkinson%20ML-Model/frontend/index.html#460-460), lines 460 to 760
+
+Read [](file:///h%3A/Parkinson%20ML-Model/backend/feature_utils.py#1-1), lines 1 to 220
+
+Use this wording in your project:
+
+Your app works as a voice-based screening pipeline. A user uploads or records speech in index.html, the browser sends the audio to the FastAPI backend in main.py, and the backend extracts acoustic features from the signal using feature_utils.py. Those features are scaled and passed into the trained TensorFlow model, which outputs a Parkinson’s probability. The backend then turns that probability into a risk label such as Very Low, Low, Moderate, High, or Very High.
+
+What ML model is used depends on which part of the repo you mean:
+- The current deployed backend uses a unified Keras/TensorFlow neural network loaded from `unified_advanced_pd_fixed.keras` or the fallback `unified_advanced_pd.keras`.
+- The training scripts also show ensemble experiments with a neural network plus XGBoost, and in some versions Random Forest/other classifiers.
+- So for the live app, the main model is the neural network, not a multi-model ensemble.
+
+The important feature terms mean:
+- Jitter: tiny cycle-to-cycle pitch instability. Higher values can indicate unstable vocal folds and are often associated with Parkinsonian speech.
+- Shimmer: tiny cycle-to-cycle loudness/amplitude instability. Higher values mean the voice amplitude varies more from one cycle to the next.
+- HNR: harmonic-to-noise ratio. Higher HNR means a cleaner, more periodic voice; lower HNR means more noise/breathiness.
+- F0 mean: average fundamental frequency, basically the average pitch of the voice.
+- Spectral centroid: where the “center of mass” of the sound spectrum sits; higher values usually mean a brighter voice.
+- Zero crossing rate: how often the waveform crosses zero; higher values often reflect noisier or more unvoiced sound.
+- MFCCs: compact numerical summaries of voice timbre and texture; the model uses them because they capture patterns humans do not easily hear directly.
+
+The backend does not use a single fixed cutoff for all features. The real classification boundary is the model’s predicted probability, with these display bands in main.py:
+- below 15%: Very Low Risk
+- below 30%: Low Risk
+- below 50%: Moderate Risk
+- below 65%: Elevated Risk
+- below 80%: High Risk
+- 80% and above: Very High Risk
+
+The fallback scoring path in main.py uses rough heuristic thresholds like:
+- HNR > 18 lowers risk
+- HNR < 15 raises risk
+- Jitter > 0.008 raises risk
+- Shimmer > 0.20 raises risk
+
+If you want, I can turn this into a short project README section or a cleaner “How the model works” paragraph you can paste directly into your documentation.

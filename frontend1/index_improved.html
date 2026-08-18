@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧠 Professional Parkinson's Voice Detection</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(59, 130, 246, 0.5);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(59, 130, 246, 0.8);
+    }
+
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #172554 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #e5e7eb;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .glass-effect {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .glass-effect-lighter {
+      background: rgba(30, 58, 138, 0.5);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .glossy-button {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .glossy-button::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transform: rotate(45deg);
+      animation: shine 3s infinite;
+    }
+
+    @keyframes shine {
+      0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+      100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    }
+
+    .pulse-glow {
+      animation: pulseGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% {
+        box-shadow: 0 0 20px rgba(6, 182, 212, 0.5), 0 0 40px rgba(59, 130, 246, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 40px rgba(6, 182, 212, 0.8), 0 0 80px rgba(59, 130, 246, 0.5);
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .slide-in-left {
+      animation: slideInLeft 0.5s ease-out;
+    }
+
+    @keyframes slideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .risk-badge {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+    }
+
+    .risk-badge.very-low {
+      background: rgba(34, 197, 94, 0.2);
+      color: #86efac;
+      border: 2px solid rgba(34, 197, 94, 0.5);
+    }
+
+    .risk-badge.low {
+      background: rgba(134, 239, 172, 0.15);
+      color: #86efac;
+      border: 2px solid rgba(134, 239, 172, 0.3);
+    }
+
+    .risk-badge.moderate {
+      background: rgba(234, 179, 8, 0.15);
+      color: #fbbf24;
+      border: 2px solid rgba(234, 179, 8, 0.3);
+    }
+
+    .risk-badge.high {
+      background: rgba(249, 115, 22, 0.15);
+      color: #fb923c;
+      border: 2px solid rgba(249, 115, 22, 0.3);
+    }
+
+    .risk-badge.very-high {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 2px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin: 20px 0;
+    }
+
+    .feature-card {
+      background: rgba(30, 58, 138, 0.4);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+      background: rgba(30, 58, 138, 0.6);
+      border-color: rgba(148, 163, 184, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .followup-item {
+      padding: 12px;
+      border-left: 4px solid #06b6d4;
+      background: rgba(6, 182, 212, 0.1);
+      border-radius: 6px;
+      margin: 8px 0;
+    }
+
+    .followup-item.high {
+      border-left-color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .followup-item.moderate {
+      border-left-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.1);
+    }
+
+    .followup-item.low {
+      border-left-color: #10b981;
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    .spinner {
+      border: 3px solid rgba(148, 163, 184, 0.2);
+      border-radius: 50%;
+      border-top: 3px solid #06b6d4;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .probability-arc {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      font-weight: 700;
+      background: conic-gradient(
+        from 180deg,
+        #06b6d4 0deg,
+        #3b82f6 90deg,
+        #8b5cf6 180deg
+      );
+      padding: 3px;
+    }
+
+    .probability-arc-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="min-h-screen py-8 px-4 sm:px-6">
+    <!-- Main Container -->
+    <div class="max-w-6xl mx-auto">
+      <!-- Header -->
+      <div class="text-center mb-8 fade-in">
+        <div class="inline-flex items-center gap-3 glass-effect rounded-full px-6 py-3 mb-6">
+          <i class="fas fa-brain text-2xl text-cyan-400"></i>
+          <h1 class="text-4xl sm:text-5xl font-bold gradient-text">Parkinson's Detection</h1>
+        </div>
+        <p class="text-lg text-cyan-300 font-medium">Professional AI Voice Analysis System</p>
+        <p class="text-sm text-slate-400 mt-2">Advanced 215-Feature Neural Network Analysis</p>
+      </div>
+
+      <!-- Main Content -->
+      <div id="form-container" class="grid gap-8">
+        <!-- Upload Section -->
+        <div class="glass-effect rounded-2xl p-8 fade-in" style="animation-delay: 0.1s">
+          <div class="mb-8">
+            <label class="block text-lg font-semibold text-cyan-300 mb-4 flex items-center gap-2">
+              <i class="fas fa-microphone"></i>
+              Upload Voice Recording
+            </label>
+            <div class="relative group">
+              <input type="file" id="voice" accept=".wav,.mp3,.m4a"
+                     class="block w-full px-4 py-4 file:py-3 file:px-6 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-cyan-500 file:to-blue-500 file:text-white hover:file:from-cyan-600 hover:file:to-blue-600 transition-all duration-300 bg-slate-800 border-2 border-dashed border-slate-600 rounded-lg text-slate-300 cursor-pointer"
+                     onchange="updateFilename()">
+              <div id="filename" class="text-sm text-slate-400 mt-2"></div>
+            </div>
+          </div>
+
+          <div class="flex gap-4 flex-wrap">
+            <button onclick="testConnection()"
+                    class="glossy-button flex-1 min-w-[160px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">
+              <i class="fas fa-plug"></i>
+              <span>Test Connection</span>
+            </button>
+            <button onclick="startAnalysis()"
+                    class="glossy-button flex-1 min-w-[220px] inline-flex items-center justify-center gap-3 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 hover:from-cyan-600 hover:via-blue-600 hover:to-purple-600 text-white font-bold py-3 px-8 rounded-lg text-lg pulse-glow shadow-xl transition-all duration-300">
+              <i class="fas fa-rocket"></i>
+              <span>Analyze Voice</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Container (Hidden by default) -->
+      <div id="results-container" class="hidden">
+        <!-- Analysis Status -->
+        <div id="analyzing-section" class="glass-effect rounded-2xl p-8 text-center mb-8 fade-in">
+          <div class="mb-6">
+            <div class="spinner mx-auto mb-4"></div>
+            <p class="text-2xl font-semibold text-cyan-300 mb-2">Analyzing Voice...</p>
+            <p class="text-slate-400">Processing 215 acoustic features using advanced neural network</p>
+          </div>
+          <div class="space-y-4 max-w-md mx-auto">
+            <div class="glass-effect-lighter rounded-lg p-4">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-blue-300">Feature Extraction</span>
+                <span class="text-xs text-slate-500" id="progress-1">0%</span>
+              </div>
+              <div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-blue-500 to-cyan-500 animate-pulse rounded-full" id="progress-bar-1"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Risk Assessment Section -->
+        <div id="risk-section" class="hidden glass-effect rounded-2xl p-8 mb-8 fade-in">
+          <div class="grid md:grid-cols-3 gap-6 items-center mb-8">
+            <!-- Probability Circle -->
+            <div class="flex justify-center md:col-span-1 slide-in-left">
+              <div class="probability-arc" id="risk-circle">
+                <div class="probability-arc-inner">
+                  <span id="probability-display">0%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Risk Info -->
+            <div class="md:col-span-2">
+              <div class="mb-4">
+                <h2 class="text-3xl font-bold mb-2 text-cyan-300">Risk Assessment</h2>
+                <p class="text-slate-400 text-sm">Comprehensive analysis of vocal characteristics</p>
+              </div>
+
+              <div class="space-y-4">
+                <div>
+                  <label class="text-sm text-slate-400 block mb-2">Risk Level</label>
+                  <div id="risk-level-display" class="risk-badge very-low">Very Low Risk</div>
+                </div>
+
+                <div>
+                  <label class="text-sm text-slate-400 block mb-2">Confidence Score</label>
+                  <div class="flex items-center gap-2">
+                    <div class="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                      <div id="confidence-bar" class="h-full bg-gradient-to-r from-green-500 to-cyan-500 rounded-full w-0 transition-all duration-500"></div>
+                    </div>
+                    <span id="confidence-display" class="text-lg font-bold text-cyan-300 min-w-[50px]">0%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Section -->
+          <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <!-- Risk Distribution Chart -->
+            <div class="glass-effect-lighter rounded-lg p-6">
+              <h3 class="text-lg font-semibold text-cyan-300 mb-4 flex items-center gap-2">
+                <i class="fas fa-chart-pie"></i>
+                Risk Distribution
+              </h3>
+              <div class="chart-container">
+                <canvas id="riskChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Feature Analysis Chart -->
+            <div class="glass-effect-lighter rounded-lg p-6">
+              <h3 class="text-lg font-semibold text-cyan-300 mb-4 flex items-center gap-2">
+                <i class="fas fa-chart-bar"></i>
+                Key Voice Features
+              </h3>
+              <div class="chart-container">
+                <canvas id="featuresChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Key Metrics -->
+          <div class="grid md:grid-cols-4 gap-4 mb-8">
+            <div class="feature-card">
+              <div class="text-xs text-slate-400 mb-2">Jitter</div>
+              <div class="text-2xl font-bold gradient-text" id="jitter-val">-</div>
+              <div class="text-xs text-slate-500 mt-1">Pitch Stability</div>
+            </div>
+            <div class="feature-card">
+              <div class="text-xs text-slate-400 mb-2">Shimmer</div>
+              <div class="text-2xl font-bold gradient-text" id="shimmer-val">-</div>
+              <div class="text-xs text-slate-500 mt-1">Amplitude Stability</div>
+            </div>
+            <div class="feature-card">
+              <div class="text-xs text-slate-400 mb-2">HNR</div>
+              <div class="text-2xl font-bold gradient-text" id="hnr-val">-</div>
+              <div class="text-xs text-slate-500 mt-1">Voice Quality</div>
+            </div>
+            <div class="feature-card">
+              <div class="text-xs text-slate-400 mb-2">F0 Mean</div>
+              <div class="text-2xl font-bold gradient-text" id="f0-val">-</div>
+              <div class="text-xs text-slate-500 mt-1">Fundamental Frequency</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Follow-up Recommendations Section -->
+        <div id="followup-section" class="hidden glass-effect rounded-2xl p-8 fade-in">
+          <h2 class="text-2xl font-bold mb-6 text-cyan-300 flex items-center gap-2">
+            <i class="fas fa-clipboard-list"></i>
+            Recommended Follow-Up Actions
+          </h2>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <!-- Recommendations -->
+            <div>
+              <h3 class="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                <i class="fas fa-stethoscope"></i>
+                Clinical Recommendations
+              </h3>
+              <div id="recommendations-list" class="space-y-3">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- Next Steps -->
+            <div>
+              <h3 class="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                <i class="fas fa-calendar-check"></i>
+                Suggested Next Steps
+              </h3>
+              <div id="nextsteps-list" class="space-y-3">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Disclaimer -->
+          <div class="glass-effect-lighter rounded-lg p-4 mt-6 border-l-4 border-amber-500">
+            <p class="text-sm text-amber-200">
+              <i class="fas fa-exclamation-triangle mr-2"></i>
+              <strong>Important Disclaimer:</strong> This analysis is for research and informational purposes only. It is not a medical diagnosis. 
+              Please consult with qualified healthcare professionals for medical advice and proper evaluation.
+            </p>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-4 justify-center mt-8">
+          <button onclick="downloadReport()"
+                  class="glossy-button inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300">
+            <i class="fas fa-download"></i>
+            <span>Download Report</span>
+          </button>
+          <button onclick="resetAnalysis()"
+                  class="glossy-button inline-flex items-center gap-2 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300">
+            <i class="fas fa-redo"></i>
+            <span>New Analysis</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let riskChart = null;
+    let featuresChart = null;
+    let analysisResult = null;
+
+    function updateFilename() {
+      const fileInput = document.getElementById('voice');
+      const filename = document.getElementById('filename');
+      if (fileInput.files && fileInput.files[0]) {
+        filename.textContent = `📄 Selected: ${fileInput.files[0].name} (${(fileInput.files[0].size / 1024 / 1024).toFixed(2)} MB)`;
+      } else {
+        filename.textContent = '';
+      }
+    }
+
+    async function testConnection() {
+      try {
+        const response = await fetch('http://localhost:8001/health');
+        const data = await response.json();
+        alert(`✓ Connected!\n\nService: ${data.service}\nVersion: ${data.version}\nStatus: ${data.status}`);
+      } catch (error) {
+        alert(`✗ Connection failed!\n\nMake sure the backend is running on http://localhost:8001\n\nError: ${error.message}`);
+      }
+    }
+
+    async function startAnalysis() {
+      const fileInput = document.getElementById('voice');
+      if (!fileInput.files || !fileInput.files[0]) {
+        alert('Please select a voice file first');
+        return;
+      }
+
+      // Show analyzing section
+      document.getElementById('form-container').classList.add('hidden');
+      document.getElementById('results-container').classList.remove('hidden');
+      document.getElementById('analyzing-section').classList.remove('hidden');
+      document.getElementById('risk-section').classList.add('hidden');
+      document.getElementById('followup-section').classList.add('hidden');
+
+      const formData = new FormData();
+      formData.append('voice', fileInput.files[0]);
+
+      try {
+        // Simulate progress
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+          progress += Math.random() * 20;
+          if (progress > 90) progress = 90;
+          document.getElementById('progress-bar-1').style.width = progress + '%';
+          document.getElementById('progress-1').textContent = Math.floor(progress) + '%';
+        }, 300);
+
+        const response = await fetch('http://localhost:8001/predict', {
+          method: 'POST',
+          body: formData
+        });
+
+        clearInterval(progressInterval);
+        document.getElementById('progress-bar-1').style.width = '100%';
+        document.getElementById('progress-1').textContent = '100%';
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          displayResults(result);
+        } else {
+          alert(`Error: ${result.message}`);
+          resetAnalysis();
+        }
+      } catch (error) {
+        alert(`Error: ${error.message}\n\nMake sure the backend is running!`);
+        resetAnalysis();
+      }
+    }
+
+    function displayResults(result) {
+      analysisResult = result;
+
+      // Hide analyzing, show results
+      document.getElementById('analyzing-section').classList.add('hidden');
+      document.getElementById('risk-section').classList.remove('hidden');
+      document.getElementById('followup-section').classList.remove('hidden');
+
+      const pd_prob = result.pd_probability;
+      const riskLevel = result.risk_level;
+
+      // Update probability display
+      const probDisplay = document.getElementById('probability-display');
+      const riskBadge = document.getElementById('risk-level-display');
+      const confidenceBar = document.getElementById('confidence-bar');
+      const confidenceDisplay = document.getElementById('confidence-display');
+
+      // Animate probability
+      animateValue(probDisplay, 0, pd_prob, 1000, '%');
+      animateValue(confidenceDisplay, 0, result.confidence_score, 1000, '%');
+      confidenceBar.style.width = result.confidence_score + '%';
+
+      // Set risk level
+      const riskClasses = {
+        'Very Low Risk': 'very-low',
+        'Low Risk': 'low',
+        'Moderate Risk': 'moderate',
+        'Elevated Risk': 'high',
+        'High Risk': 'high',
+        'Very High Risk': 'very-high'
+      };
+
+      riskBadge.className = 'risk-badge ' + (riskClasses[riskLevel] || 'moderate');
+      riskBadge.innerHTML = `<i class="fas fa-shield-alt mr-2"></i>${riskLevel}`;
+
+      // Update key metrics
+      document.getElementById('jitter-val').textContent = (result.key_features.jitter || 0).toFixed(4);
+      document.getElementById('shimmer-val').textContent = (result.key_features.shimmer || 0).toFixed(4);
+      document.getElementById('hnr-val').textContent = (result.key_features.hnr || 0).toFixed(2);
+      document.getElementById('f0-val').textContent = (result.key_features.f0_mean || 0).toFixed(1);
+
+      // Create charts
+      createRiskChart(pd_prob);
+      createFeaturesChart(result.key_features);
+
+      // Update follow-ups
+      displayFollowups(result.follow_ups);
+
+      // Scroll to results
+      setTimeout(() => {
+        document.getElementById('risk-section').scrollIntoView({ behavior: 'smooth' });
+      }, 300);
+    }
+
+    function animateValue(element, start, end, duration, suffix = '') {
+      const range = end - start;
+      const increment = range / (duration / 16);
+      let current = start;
+
+      const timer = setInterval(() => {
+        current += increment;
+        if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+          current = end;
+          clearInterval(timer);
+        }
+        element.textContent = Math.floor(current) + suffix;
+      }, 16);
+    }
+
+    function createRiskChart(pdProb) {
+      const ctx = document.getElementById('riskChart').getContext('2d');
+
+      if (riskChart) riskChart.destroy();
+
+      const colors = pdProb < 30 ? ['#10b981', '#94a3b8']
+                   : pdProb < 60 ? ['#f59e0b', '#94a3b8']
+                   : ['#ef4444', '#94a3b8'];
+
+      riskChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['PD Risk', 'Healthy'],
+          datasets: [{
+            data: [pdProb, 100 - pdProb],
+            backgroundColor: colors,
+            borderColor: 'rgba(15, 23, 42, 0.8)',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: '#cbd5e1',
+                font: { size: 12, weight: 'bold' }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function createFeaturesChart(features) {
+      const ctx = document.getElementById('featuresChart').getContext('2d');
+
+      if (featuresChart) featuresChart.destroy();
+
+      const labels = ['Jitter', 'Shimmer', 'HNR'];
+      const data = [
+        (features.jitter || 0) * 100,
+        (features.shimmer || 0) * 100,
+        (features.hnr || 0)
+      ];
+
+      featuresChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Value',
+            data: data,
+            backgroundColor: [
+              'rgba(59, 130, 246, 0.7)',
+              'rgba(8, 145, 178, 0.7)',
+              'rgba(139, 92, 246, 0.7)'
+            ],
+            borderColor: [
+              'rgb(59, 130, 246)',
+              'rgb(8, 145, 178)',
+              'rgb(139, 92, 246)'
+            ],
+            borderWidth: 2,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              grid: { color: 'rgba(148, 163, 184, 0.1)' },
+              ticks: { color: '#cbd5e1' }
+            },
+            y: {
+              grid: { color: 'rgba(148, 163, 184, 0.1)' },
+              ticks: { color: '#cbd5e1' }
+            }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+
+    function displayFollowups(followups) {
+      const recList = document.getElementById('recommendations-list');
+      const stepsList = document.getElementById('nextsteps-list');
+
+      recList.innerHTML = followups.recommendations.map((rec, i) => `
+        <div class="followup-item ${followups.level.toLowerCase()}">
+          <div class="flex items-start gap-2">
+            <i class="fas fa-check-circle mt-1 text-sm"></i>
+            <span class="text-sm">${rec}</span>
+          </div>
+        </div>
+      `).join('');
+
+      stepsList.innerHTML = followups.next_steps.map((step, i) => `
+        <div class="followup-item ${followups.level.toLowerCase()}">
+          <div class="flex items-start gap-2">
+            <span class="text-sm font-bold min-w-[24px]">${i + 1}.</span>
+            <span class="text-sm">${step}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function resetAnalysis() {
+      document.getElementById('form-container').classList.remove('hidden');
+      document.getElementById('results-container').classList.add('hidden');
+      document.getElementById('voice').value = '';
+      document.getElementById('filename').textContent = '';
+      analysisResult = null;
+
+      if (riskChart) riskChart.destroy();
+      if (featuresChart) featuresChart.destroy();
+    }
+
+    function downloadReport() {
+      if (!analysisResult) return;
+
+      const report = `
+PARKINSON'S DISEASE VOICE ANALYSIS REPORT
+==========================================
+
+Date: ${new Date().toLocaleDateString()}
+Time: ${new Date().toLocaleTimeString()}
+
+ANALYSIS RESULTS
+================
+
+Risk Level: ${analysisResult.risk_level}
+PD Probability: ${analysisResult.pd_probability}%
+Confidence Score: ${analysisResult.confidence_score}%
+
+KEY VOICE FEATURES
+==================
+
+Jitter (Pitch Stability): ${analysisResult.key_features.jitter || 'N/A'}
+Shimmer (Amplitude Stability): ${analysisResult.key_features.shimmer || 'N/A'}
+HNR (Harmonic to Noise Ratio): ${analysisResult.key_features.hnr || 'N/A'}
+F0 Mean (Fundamental Frequency): ${analysisResult.key_features.f0_mean || 'N/A'} Hz
+
+MODEL INFORMATION
+=================
+
+Model Type: ${analysisResult.model_info.type}
+Features: ${analysisResult.model_info.features}
+Version: ${analysisResult.model_info.version}
+
+RECOMMENDATIONS
+===============
+
+${analysisResult.follow_ups.recommendations.map(r => '• ' + r).join('\n')}
+
+NEXT STEPS
+==========
+
+${analysisResult.follow_ups.next_steps.map((s, i) => (i + 1) + '. ' + s).join('\n')}
+
+DISCLAIMER
+==========
+
+${analysisResult.disclaimer}
+
+This report is generated for informational purposes only.
+Consult with healthcare professionals for medical advice.
+      `;
+
+      const element = document.createElement('a');
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(report));
+      element.setAttribute('download', `PD_Analysis_${new Date().getTime()}.txt`);
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    }
+  </script>
+</body>
+</html>

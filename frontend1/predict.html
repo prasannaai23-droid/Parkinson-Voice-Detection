@@ -1,0 +1,315 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parkinson's Detection - AI Voice Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; width: 100%; }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: slideDown 0.8s ease-out;
+        }
+        .header h1 {
+            color: white;
+            font-size: 3em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        .header .brain-icon {
+            font-size: 3.5em;
+            animation: float 4s ease-in-out infinite;
+        }
+        .header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.3em;
+            font-weight: 300;
+        }
+        @keyframes float { 0%, 100{ transform: translateY(0px); } 50% { transform: translateY(-20px); } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.8s ease-out;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .upload-section h2 { color: #333; margin-bottom: 25px; font-size: 1.5em; }
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover { border-color: #764ba2; transform: translateY(-5px); }
+        .upload-area input[type="file"] { display: none; }
+        .upload-icon { font-size: 3em; margin-bottom: 15px; }
+        .upload-text { color: #666; font-size: 1.1em; margin-bottom: 10px; }
+        .file-name {
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            text-align: center;
+        }
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            grid-column: 1 / -1;
+        }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4); }
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        .btn-secondary:hover { background: #667eea; color: white; }
+        .results-section { display: none; }
+        .results-section.active { display: block; }
+        .results-section h2 { color: #333; margin-bottom: 25px; font-size: 1.5em; }
+        .diagnosis-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+        .diagnosis-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .diagnosis-value.positive { color: #ff6b6b; }
+        .diagnosis-value.negative { color: #51cf66; }
+        .confidence-bar {
+            width: 100%;
+            height: 12px;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        .stat-box {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+        .stat-label { color: #666; font-size: 0.9em; margin-bottom: 8px; }
+        .stat-value { color: #333; font-size: 1.5em; font-weight: bold; }
+        .loading { text-align: center; color: #667eea; font-size: 1.1em; padding: 20px; display: none; }
+        .loading.active { display: block; }
+        .spinner {
+            border: 4px solid rgba(102, 126, 234, 0.1);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .footer { text-align: center; color: rgba(255, 255, 255, 0.8); margin-top: 40px; }
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        .error.active { display: block; }
+        @media (max-width: 768px) {
+            .main-grid { grid-template-columns: 1fr; }
+            .header h1 { font-size: 1.8em; }
+            .button-group { grid-template-columns: 1fr; .btn-primary {grid-column: 1;} }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><span class="brain-icon">🧠</span><span>Parkinson's Detection</span></h1>
+            <p>AI-Powered Voice Analysis</p>
+        </div>
+
+        <div class="main-grid">
+            <div class="card">
+                <div class="upload-section">
+                    <h2>Voice Recording (.wav)</h2>
+                    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                        <div class="upload-icon">🎙️</div>
+                        <div class="upload-text">Click to choose file</div>
+                        <input type="file" id="fileInput" accept=".wav,.mp3,.ogg,audio/*">
+                        <div class="file-name" id="fileName" style="display: none;"></div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-secondary" onclick="testConnection()">Test Connection</button>
+                        <button class="btn btn-secondary" onclick="resetForm()">Start New</button>
+                        <button class="btn btn-primary" onclick="analyzeVoice()">ANALYZE VOICE</button>
+                    </div>
+
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p>Analyzing...</p>
+                    </div>
+
+                    <div class="error" id="error"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="results-section" id="resultsSection">
+                    <h2>Analysis Results</h2>
+                    <div class="diagnosis-card">
+                        <div style="text-align: center; color: #666; font-size: 0.95em; margin-bottom: 10px;">DIAGNOSIS</div>
+                        <div class="diagnosis-value" id="diagnosisValue">--</div>
+                        <div style="text-align: center; color: #999; font-size: 0.9em; margin-bottom: 20px;"><span id="riskLevel">--</span></div>
+                        <div style="text-align: center; color: #666; font-size: 0.85em; margin-bottom: 8px;">CONFIDENCE</div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="confidenceFill" style="width: 0%;"></div>
+                        </div>
+                        <div style="text-align: center; color: #667eea; font-weight: bold;"><span id="confidencePercent">0</span>%</div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-box"><div class="stat-label">PD Probability</div><div class="stat-value" id="pdProb">--</div></div>
+                        <div class="stat-box"><div class="stat-label">Threshold</div><div class="stat-value" id="threshold">--</div></div>
+                        <div class="stat-box"><div class="stat-label">Model</div><div class="stat-value">Expert v2.0</div></div>
+                        <div class="stat-box"><div class="stat-label">Accuracy</div><div class="stat-value">100</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Advanced Parkinson's Detection using Expert Random Forest Model</p>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                selectedFile = e.target.files[0];
+                document.getElementById('fileName').textContent = 'File: ' + selectedFile.name;
+                document.getElementById('fileName').style.display = 'block';
+            }
+        });
+        async function testConnection() {
+            try {
+                const response = await fetch('http://localhost:8000/health', { mode: 'cors', method: 'GET' });
+                const data = await response.json();
+                alert('Backend Connected! Status: ' + data.status);
+            } catch (e) {
+                alert('Cannot connect. Make sure backend is running on port 8000');
+            }
+        }
+        async function analyzeVoice() {
+            if (!selectedFile) { alert('Please select an audio file'); return; }
+            show('loading', true);
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            try {
+                const response = await fetch('http://localhost:8000/predict', { method: 'POST', body: formData, mode: 'cors' });
+                if (!response.ok) throw new Error('Prediction failed');
+                const result = await response.json();
+                displayResults(result);
+            } catch (error) {
+                showError('Error: ' + error.message);
+            } finally {
+                show('loading', false);
+            }
+        }
+        function displayResults(data) {
+            const diagEl = document.getElementById('diagnosisValue');
+            if (data.diagnosis.includes('Positive')) {
+                diagEl.textContent = 'POSITIVE';
+                diagEl.className = 'diagnosis-value positive';
+            } else {
+                diagEl.textContent = 'NEGATIVE';
+                diagEl.className = 'diagnosis-value negative';
+            }
+            document.getElementById('riskLevel').textContent = data.risk_level;
+            const conf = Math.round(data.confidence * 100);
+            document.getElementById('confidenceFill').style.width = conf + '%';
+            document.getElementById('confidencePercent').textContent = conf;
+            document.getElementById('pdProb').textContent = (data.pd_probability * 100).toFixed(1) + '%';
+            document.getElementById('threshold').textContent = (data.threshold_used * 100).toFixed(0) + '%';
+            show('resultsSection', true);
+        }
+        function show(id, isShow) { document.getElementById(id).classList.toggle('active', isShow); }
+        function showError(msg) {
+            const errEl = document.getElementById('error');
+            errEl.textContent = msg;
+            show('error', true);
+        }
+        function resetForm() {
+            selectedFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileName').style.display = 'none';
+            show('resultsSection', false);
+            show('error', false);
+        }
+    </script>
+</body>
+</html>

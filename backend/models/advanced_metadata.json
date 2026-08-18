@@ -1,0 +1,72 @@
+{
+  "model_version": "3.0",
+  "creation_date": "2026-08-16T19:35:25.523486",
+  "feature_count": 215,
+  "features_selected": 40,
+  "feature_extractor": "advanced_features.extract_advanced_features (215 features)",
+  "training_samples": 81,
+  "healthy_samples": 41,
+  "pd_samples": 40,
+  "label_mapping": {
+    "0": "Healthy",
+    "1": "Parkinsons"
+  },
+  "scaler_type": "RobustScaler",
+  "calibration": "sigmoid (Platt) inside a 5-fold inner CV",
+  "validation": "5-fold stratified CV repeated 6x",
+  "cross_validated_scores": {
+    "logistic": {
+      "auc": 0.781712962962963,
+      "auc_std": 0.07413273501905913,
+      "accuracy": 0.711642156862745,
+      "accuracy_std": 0.0840226143157615,
+      "sensitivity": 0.6958333333333333,
+      "specificity": 0.7277777777777779
+    },
+    "svm_rbf": {
+      "auc": 0.8060763888888889,
+      "auc_std": 0.07737181950539293,
+      "accuracy": 0.7199754901960784,
+      "accuracy_std": 0.0813493832191404,
+      "sensitivity": 0.7083333333333334,
+      "specificity": 0.7319444444444445
+    },
+    "random_forest": {
+      "auc": 0.7714699074074074,
+      "auc_std": 0.08180932261050308,
+      "accuracy": 0.7078431372549019,
+      "accuracy_std": 0.08047879119601736,
+      "sensitivity": 0.6875,
+      "specificity": 0.7277777777777779
+    },
+    "extra_trees": {
+      "auc": 0.7730324074074075,
+      "auc_std": 0.08504574184782673,
+      "accuracy": 0.6955882352941177,
+      "accuracy_std": 0.08486411215418782,
+      "sensitivity": 0.6583333333333333,
+      "specificity": 0.7324074074074074
+    },
+    "xgboost": {
+      "auc": 0.744386574074074,
+      "auc_std": 0.08754279906273468,
+      "accuracy": 0.6854166666666668,
+      "accuracy_std": 0.08648531856771156,
+      "sensitivity": 0.6625,
+      "specificity": 0.7069444444444445
+    }
+  },
+  "ensemble_members": [
+    "svm_rbf",
+    "logistic",
+    "extra_trees"
+  ],
+  "ensemble_auc": 0.7932926829268293,
+  "ensemble_accuracy": 0.7160493827160493,
+  "decision_threshold": 0.30999999999999994,
+  "models": {
+    "svm_rbf": "advanced_svm_rbf.pkl",
+    "logistic": "advanced_logistic.pkl",
+    "extra_trees": "advanced_extra_trees.pkl"
+  }
+}

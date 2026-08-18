@@ -1,0 +1,31 @@
+{
+  "model_type": "Hybrid Neural Network + XGBoost Ensemble",
+  "n_features": 215,
+  "n_samples": 81,
+  "n_healthy": 41,
+  "n_pd": 40,
+  "test_metrics": {
+    "accuracy": 0.6470588235294118,
+    "precision": 0.6666666666666666,
+    "recall": 0.5,
+    "f1_score": 0.5714285714285714,
+    "auc_roc": 0.7083333333333334,
+    "specificity": 0.7777777777777778,
+    "sensitivity": 0.5
+  },
+  "architecture": {
+    "nn_layers": [
+      512,
+      256,
+      128,
+      64,
+      1
+    ],
+    "xgb_estimators": 300,
+    "ensemble_weights": {
+      "nn": 0.6,
+      "xgb": 0.4
+    }
+  },
+  "version": "4.0-production"
+}

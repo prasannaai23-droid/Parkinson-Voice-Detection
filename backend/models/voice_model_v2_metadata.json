@@ -1,0 +1,30 @@
+{
+  "model_version": "2.2-retrained",
+  "creation_date": "2026-08-13T21:46:10.625810",
+  "feature_count": 215,
+  "feature_extractor": "advanced_features.extract_advanced_features (215 features)",
+  "training_samples": 81,
+  "healthy_samples": 41,
+  "pd_samples": 40,
+  "label_mapping": {
+    "0": "Healthy (HC_AH)",
+    "1": "Parkinsons (PD_AH)"
+  },
+  "scaler_type": "RobustScaler",
+  "nn_cv_accuracy": 0.6654411764705882,
+  "rf_cv_accuracy": 0.7029411764705882,
+  "xgb_cv_accuracy": 0.6779411764705883,
+  "ensemble_accuracy": 1.0,
+  "ensemble_auc": 1.0,
+  "models": {
+    "nn": "voice_nn_v2.keras",
+    "rf": "voice_rf_v2.pkl",
+    "xgb": "voice_xgb_v2.pkl",
+    "scaler": "voice_scaler_v2.pkl"
+  },
+  "ensemble_weights": {
+    "nn": 0.4,
+    "rf": 0.3,
+    "xgb": 0.3
+  }
+}

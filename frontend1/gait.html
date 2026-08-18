@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gait Pattern Screening - Separate Frontend</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #e7efe9;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(116, 163, 136, 0.18), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(198, 156, 86, 0.16), transparent 26%),
+        linear-gradient(135deg, #10201a 0%, #173126 45%, #1e2b35 100%);
+    }
+
+    .shell {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px 18px 40px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr 0.7fr;
+      gap: 24px;
+      padding: 30px;
+      border-radius: 28px;
+      background: rgba(13, 23, 20, 0.72);
+      border: 1px solid rgba(183, 197, 187, 0.14);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
+      backdrop-filter: blur(18px);
+      margin-bottom: 22px;
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: clamp(32px, 4vw, 52px);
+      line-height: 1.02;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      margin: 0 0 10px;
+      color: #b9c7c0;
+      max-width: 62ch;
+      line-height: 1.6;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(71, 140, 100, 0.16);
+      border: 1px solid rgba(143, 191, 160, 0.24);
+      color: #d6f0df;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .hero-visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 220px;
+      border-radius: 24px;
+      background:
+        linear-gradient(180deg, rgba(18, 36, 30, 0.1), rgba(18, 36, 30, 0.42)),
+        radial-gradient(circle at center, rgba(109, 171, 128, 0.22), transparent 60%);
+      border: 1px solid rgba(143, 191, 160, 0.14);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-visual::before,
+    .hero-visual::after {
+      content: "";
+      position: absolute;
+      inset: auto;
+      border-radius: 999px;
+      background: rgba(219, 185, 111, 0.14);
+      filter: blur(2px);
+      animation: drift 8s ease-in-out infinite;
+    }
+
+    .hero-visual::before { width: 170px; height: 170px; left: 18%; top: 18%; }
+    .hero-visual::after { width: 120px; height: 120px; right: 16%; bottom: 18%; animation-delay: -3s; }
+
+    @keyframes drift {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      50% { transform: translateY(-12px) translateX(8px); }
+    }
+
+    .footprint {
+      position: relative;
+      z-index: 1;
+      font-size: 92px;
+      color: #cfe7d8;
+      text-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .panel {
+      background: rgba(10, 18, 16, 0.76);
+      border: 1px solid rgba(183, 197, 187, 0.12);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.16);
+      backdrop-filter: blur(16px);
+    }
+
+    .panel h2 {
+      margin: 0 0 18px;
+      font-size: 18px;
+      color: #d8efe0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dropzone {
+      border: 2px dashed rgba(158, 197, 171, 0.34);
+      border-radius: 20px;
+      padding: 28px;
+      text-align: center;
+      background: linear-gradient(180deg, rgba(44, 63, 53, 0.4), rgba(25, 39, 33, 0.56));
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .dropzone:hover {
+      transform: translateY(-2px);
+      border-color: rgba(177, 222, 195, 0.58);
+      background: linear-gradient(180deg, rgba(54, 77, 65, 0.46), rgba(25, 39, 33, 0.68));
+    }
+
+    .dropzone .icon {
+      font-size: 46px;
+      color: #9fe2b3;
+      margin-bottom: 10px;
+    }
+
+    .dropzone .title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .dropzone .sub {
+      color: #b0c0b8;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    input[type="file"] { display: none; }
+
+    .meta {
+      margin-top: 14px;
+      color: #9fb3aa;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      color: white;
+      flex: 1;
+      min-width: 180px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn:hover:not(:disabled) { transform: translateY(-2px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn.primary { background: linear-gradient(135deg, #58a06f 0%, #2f6a58 100%); box-shadow: 0 14px 30px rgba(47, 106, 88, 0.22); }
+    .btn.secondary { background: linear-gradient(135deg, #3c5f78 0%, #2a4658 100%); box-shadow: 0 14px 30px rgba(42, 70, 88, 0.22); }
+    .btn.ghost { background: linear-gradient(135deg, #55615a 0%, #3d4742 100%); }
+
+    .status {
+      margin-top: 12px;
+      min-height: 24px;
+      color: #b8cbc1;
+      font-size: 13px;
+    }
+
+    .results {
+      display: none;
+      margin-top: 18px;
+    }
+
+    .results.active { display: block; }
+
+    .score-card {
+      padding: 24px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(31, 49, 41, 0.9), rgba(17, 28, 24, 0.9));
+      border: 1px solid rgba(169, 202, 181, 0.12);
+      margin-bottom: 18px;
+    }
+
+    .score-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: end;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .score-value {
+      font-size: clamp(44px, 6vw, 66px);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      margin: 0;
+      color: #dff5e6;
+    }
+
+    .score-label {
+      color: #a9bbb3;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .risk-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .pill-low { background: rgba(52, 168, 83, 0.18); color: #b8ffca; }
+    .pill-mid { background: rgba(245, 158, 11, 0.16); color: #fde08e; }
+    .pill-high { background: rgba(239, 68, 68, 0.16); color: #ffb0b0; }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .kpi {
+      border-radius: 18px;
+      background: rgba(30, 44, 38, 0.86);
+      border: 1px solid rgba(169, 202, 181, 0.1);
+      padding: 16px;
+    }
+
+    .kpi .label {
+      color: #9eb1aa;
+      font-size: 12px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 800;
+    }
+
+    .kpi .value {
+      font-size: 24px;
+      font-weight: 900;
+      color: #effaf1;
+    }
+
+    .bars {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 120px 1fr 56px;
+      gap: 12px;
+      align-items: center;
+      font-size: 13px;
+      color: #cad7d0;
+    }
+
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      overflow: hidden;
+    }
+
+    .fill {
+      height: 100%;
+      border-radius: 999px;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    .fill.walk { background: linear-gradient(90deg, #58a06f, #95d7a9); }
+    .fill.speed { background: linear-gradient(90deg, #61a0b8, #8ed2e4); }
+    .fill.stability { background: linear-gradient(90deg, #d29b58, #f0c37b); }
+    .fill.variability { background: linear-gradient(90deg, #c45858, #f08c8c); }
+
+    .chart-card {
+      margin-top: 18px;
+      height: 280px;
+      border-radius: 20px;
+      background: rgba(19, 30, 25, 0.92);
+      border: 1px solid rgba(169, 202, 181, 0.1);
+      padding: 14px;
+    }
+
+    .insight {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(94, 133, 104, 0.13);
+      border: 1px solid rgba(158, 197, 171, 0.14);
+      color: #d4e4d8;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .footer-note {
+      margin-top: 14px;
+      color: #90a39b;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 980px) {
+      .hero, .grid { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 640px) {
+      .shell { padding: 18px 12px 28px; }
+      .panel, .hero { padding: 18px; }
+      .kpi-grid { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 1fr; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div>
+        <div class="badge"><i class="fas fa-shoe-prints"></i> Separate Gait Frontend</div>
+        <h1>Gait Pattern Screening</h1>
+        <p>
+          This is a separate workspace for gait analysis only. It accepts gait sensor files and is designed to stay independent
+          from the voice frontend until you decide to merge them.
+        </p>
+        <p>
+          Upload a gait CSV/TXT file now, review the pattern UI, and later connect it to a gait model endpoint.
+        </p>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="footprint"><i class="fas fa-walking"></i></div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2><i class="fas fa-file-arrow-up"></i> Gait Input</h2>
+        <div class="dropzone" onclick="document.getElementById('gaitFile').click()">
+          <div class="icon"><i class="fas fa-file-csv"></i></div>
+          <div class="title">Upload gait pattern data</div>
+          <div class="sub">Use CSV/TXT for sensor data, or video files for motion clips.</div>
+        </div>
+        <input id="gaitFile" type="file" accept=".csv,.txt,.tsv,video/*" multiple>
+        <div class="meta" id="fileMeta">No files selected yet.</div>
+
+        <div class="actions">
+          <button class="btn secondary" type="button" onclick="testConnection()"><i class="fas fa-plug"></i> Test Backend</button>
+          <button class="btn primary" type="button" id="analyzeBtn" onclick="analyzeGait()" disabled><i class="fas fa-chart-line"></i> Analyze Gait</button>
+        </div>
+        <div class="status" id="statusText">Connect this page to a separate gait backend when you are ready.</div>
+        <div class="footer-note">
+          Suggested backend endpoint for later: <strong>http://localhost:8002/predict-gait</strong>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2><i class="fas fa-wave-square"></i> Pattern Preview</h2>
+        <div class="score-card">
+          <div class="score-top">
+            <div>
+              <div class="score-label">Gait Screening Score</div>
+              <div class="score-value" id="scoreValue">--%</div>
+            </div>
+            <div class="risk-pill pill-low" id="riskPill"><i class="fas fa-circle"></i> Waiting</div>
+          </div>
+          <div id="scoreHint" class="insight" style="margin-top:0;">Upload a gait file to inspect stride timing, symmetry, and sensor stability.</div>
+
+          <div class="kpi-grid">
+            <div class="kpi">
+              <div class="label">Stride Time</div>
+              <div class="value" id="strideVal">--</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Variability</div>
+              <div class="value" id="varVal">--</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Stability</div>
+              <div class="value" id="stabVal">--</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Sensor Count</div>
+              <div class="value" id="sensorVal">18</div>
+            </div>
+          </div>
+
+          <div class="bars">
+            <div class="bar-row"><span>Walking rhythm</span><div class="bar"><div class="fill walk" id="walkBar"></div></div><span id="walkPct">--</span></div>
+            <div class="bar-row"><span>Step speed</span><div class="bar"><div class="fill speed" id="speedBar"></div></div><span id="speedPct">--</span></div>
+            <div class="bar-row"><span>Pattern stability</span><div class="bar"><div class="fill stability" id="stabilityBar"></div></div><span id="stabilityPct">--</span></div>
+            <div class="bar-row"><span>Pattern variability</span><div class="bar"><div class="fill variability" id="variabilityBar"></div></div><span id="variabilityPct">--</span></div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <canvas id="gaitChart"></canvas>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const BACKEND = 'http://localhost:8002';
+    let gaitChart = null;
+    let selectedFile = null;
+
+    document.getElementById('gaitFile').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      selectedFile = file || null;
+      document.getElementById('analyzeBtn').disabled = !selectedFile;
+      document.getElementById('fileMeta').textContent = file
+        ? `Selected: ${file.name} (${(file.size / 1024).toFixed(0)} KB)`
+        : 'No gait file selected yet.';
+      document.getElementById('statusText').textContent = file
+        ? 'Ready to analyze. This page stays separate from the voice frontend.'
+        : 'Connect this page to a separate gait backend when you are ready.';
+    });
+
+    async function testConnection() {
+      try {
+        const response = await fetch(BACKEND + '/health');
+        if (!response.ok) throw new Error('Health check failed');
+        document.getElementById('statusText').textContent = 'Backend connected successfully.';
+      } catch (error) {
+        document.getElementById('statusText').textContent = 'Backend not connected yet. You can still review the separate gait UI.';
+      }
+    }
+
+    function setResultState(score, label) {
+      const pill = document.getElementById('riskPill');
+      const scoreValue = document.getElementById('scoreValue');
+      scoreValue.textContent = score.toFixed(1) + '%';
+
+      pill.classList.remove('pill-low', 'pill-mid', 'pill-high');
+      if (score < 30) {
+        pill.classList.add('pill-low');
+        pill.innerHTML = '<i class="fas fa-circle"></i> Low concern';
+      } else if (score < 70) {
+        pill.classList.add('pill-mid');
+        pill.innerHTML = '<i class="fas fa-circle"></i> Review';
+      } else {
+        pill.classList.add('pill-high');
+        pill.innerHTML = '<i class="fas fa-circle"></i> Elevated';
+      }
+
+      document.getElementById('scoreHint').textContent = label;
+    }
+
+    function updateBars(score, variability, stability) {
+      const walk = Math.max(0, 100 - variability * 100);
+      const speed = Math.min(100, 30 + (100 - Math.abs(stability - 50)));
+      const stable = Math.min(100, stability);
+      const variabilityPct = Math.min(100, variability * 100);
+
+      document.getElementById('walkBar').style.width = walk + '%';
+      document.getElementById('speedBar').style.width = speed + '%';
+      document.getElementById('stabilityBar').style.width = stable + '%';
+      document.getElementById('variabilityBar').style.width = variabilityPct + '%';
+
+      document.getElementById('walkPct').textContent = walk.toFixed(0) + '%';
+      document.getElementById('speedPct').textContent = speed.toFixed(0) + '%';
+      document.getElementById('stabilityPct').textContent = stable.toFixed(0) + '%';
+      document.getElementById('variabilityPct').textContent = variabilityPct.toFixed(0) + '%';
+    }
+
+    function renderChart(values) {
+      const ctx = document.getElementById('gaitChart').getContext('2d');
+      if (gaitChart) gaitChart.destroy();
+
+      gaitChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: ['Rhythm', 'Stride', 'Symmetry', 'Consistency', 'Balance', 'Smoothness'],
+          datasets: [{
+            label: 'Gait Pattern',
+            data: values,
+            fill: true,
+            backgroundColor: 'rgba(120, 194, 145, 0.18)',
+            borderColor: 'rgba(155, 229, 174, 0.85)',
+            pointBackgroundColor: '#9be5ae',
+            pointBorderColor: '#10201a',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: '#9be5ae'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              angleLines: { color: 'rgba(255,255,255,0.12)' },
+              grid: { color: 'rgba(255,255,255,0.08)' },
+              pointLabels: { color: '#d4e4d8', font: { size: 12, weight: 'bold' } },
+              ticks: { display: false, beginAtZero: true, max: 100 }
+            }
+          },
+          plugins: { legend: { labels: { color: '#d4e4d8' } } }
+        }
+      });
+    }
+
+    async function analyzeGait() {
+      if (!selectedFile) {
+        document.getElementById('statusText').textContent = 'Please upload a gait CSV or TXT file first.';
+        return;
+      }
+
+      document.getElementById('statusText').textContent = 'Preparing gait file for analysis...';
+
+      try {
+        const formData = new FormData();
+        formData.append('gait', selectedFile, selectedFile.name);
+
+        const response = await fetch(BACKEND + '/predict-gait', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) throw new Error('Gait backend not ready');
+        const result = await response.json();
+
+        const score = Number(result.gait_probability ?? result.pd_probability ?? 0);
+        const variability = Number(result.stride_variability ?? 0.24);
+        const stability = Number(result.stability_score ?? 55);
+
+        setResultState(score, result.message || 'Gait model response received.');
+        document.getElementById('strideVal').textContent = (result.stride_time_mean ?? '--').toString();
+        document.getElementById('varVal').textContent = (variability * 100).toFixed(1) + '%';
+        document.getElementById('stabVal').textContent = stability.toFixed(1) + '%';
+        renderChart(result.pattern_scores || [65, 58, 72, 61, 54, 67]);
+        updateBars(score, variability, stability);
+        document.getElementById('statusText').textContent = 'Analysis complete.';
+      } catch (error) {
+        const fileName = selectedFile.name.toLowerCase();
+        const demoScore = fileName.includes('pd') ? 78.0 : 24.0;
+        const demoVariability = fileName.includes('pd') ? 0.31 : 0.11;
+        const demoStability = fileName.includes('pd') ? 42 : 78;
+
+        setResultState(demoScore, 'Demo preview only. Connect a gait backend to analyze real sensor files.');
+        document.getElementById('strideVal').textContent = fileName.includes('pd') ? 'slower' : 'normal';
+        document.getElementById('varVal').textContent = (demoVariability * 100).toFixed(1) + '%';
+        document.getElementById('stabVal').textContent = demoStability.toFixed(1) + '%';
+        renderChart(fileName.includes('pd') ? [42, 48, 39, 44, 40, 38] : [78, 76, 82, 80, 74, 79]);
+        updateBars(demoScore, demoVariability, demoStability);
+        document.getElementById('statusText').textContent = 'Using demo preview because the gait backend endpoint is not connected yet.';
+      }
+    }
+
+    setResultState(0, 'Upload a gait file to inspect stride timing, symmetry, and sensor stability.');
+    updateBars(0, 0, 0);
+    renderChart([50, 50, 50, 50, 50, 50]);
+  </script>
+</body>
+</html>

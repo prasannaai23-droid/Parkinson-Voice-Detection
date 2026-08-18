@@ -50,3 +50,18 @@ temp_audio.wav
 # Environment
 .env
 .env.local
+.aider*
+data/gait/gait_clips/
+gait_clips/
+backend/uploads/
+sample_motion_clips
+*.mp4
+*.zip
+.gitig
+*.png
+backend/env/
+backend/env/
+backend/tf_env/
+
+voice/
+*.wav

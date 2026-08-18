@@ -1,0 +1,16 @@
+{
+  "model_version": "2.1",
+  "creation_date": "2026-04-24T11:49:06.887913",
+  "feature_count": 215,
+  "training_samples": 81,
+  "healthy_samples": 41,
+  "pd_samples": 40,
+  "test_accuracy": 0.7058823529411765,
+  "test_precision": 0.8,
+  "test_recall": 0.5,
+  "test_f1": 0.6153846153846154,
+  "test_auc": 0.7638888888888888,
+  "fold_average_f1": 0.6987878787878787,
+  "scaler_type": "RobustScaler",
+  "architecture": "Optimized Deep Neural Network"
+}

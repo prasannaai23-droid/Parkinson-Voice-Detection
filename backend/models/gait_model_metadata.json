@@ -1,0 +1,17 @@
+{
+  "model_version": "gait-v2-retrained",
+  "creation_date": "2026-08-13T23:00:05.750108",
+  "feature_count": 93,
+  "feature_extractor": "93-feature gait sensor extraction",
+  "training_samples": 224,
+  "healthy_samples": 92,
+  "pd_samples": 132,
+  "label_mapping": {
+    "0": "Healthy",
+    "1": "Parkinsons"
+  },
+  "rf_cv_accuracy": 0.8347474747474747,
+  "dnn_cv_accuracy": 0.8037373737373738,
+  "ensemble_accuracy": 0.9955357142857143,
+  "ensemble_auc": 0.9999588274044795
+}
