@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parkinson's Multimodal Review</title>
+  <style>
+    :root { color-scheme: dark; --ink: #f1f6f3; --muted: #9eb4b0; --line: rgba(214, 239, 229, .14); --panel: rgba(20, 38, 36, .82); --teal: #62d5be; --gold: #f2c477; --red: #f28b85; --bg: #0b191b; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; overflow-x: hidden; color: var(--ink); font: 15px/1.5 "Trebuchet MS", "Segoe UI", sans-serif; background: radial-gradient(circle at 12% 10%, #19423d 0, transparent 32%), radial-gradient(circle at 92% 18%, #39351f 0, transparent 25%), linear-gradient(135deg, #0b191b, #122b2b 54%, #151d20); }
+    body::before { content: ""; position: fixed; inset: 0; opacity: .22; pointer-events: none; background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px); background-size: 44px 44px; mask-image: linear-gradient(to bottom, black, transparent 80%); }
+    .shell { width: min(1180px, calc(100% - 36px)); margin: 0 auto; padding: 30px 0 64px; position: relative; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; animation: rise .7s ease both; }
+    .brand { display: flex; align-items: center; gap: 12px; font-size: 14px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+    .brand-mark { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid rgba(98,213,190,.6); border-radius: 50%; color: var(--teal); box-shadow: 0 0 28px rgba(98,213,190,.2); }
+    .connection { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #788887; transition: .3s ease; }
+    .dot.live { background: var(--teal); box-shadow: 0 0 12px var(--teal); }
+    .hero { display: grid; grid-template-columns: 1.15fr .85fr; gap: 40px; align-items: end; padding: 76px 0 50px; animation: rise .8s .08s ease both; }
+    .eyebrow { color: var(--teal); font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+    h1 { max-width: 700px; margin: 12px 0 18px; font: 500 clamp(2.8rem, 7vw, 6.6rem)/.91 Georgia, serif; letter-spacing: -.04em; }
+    .hero-copy { max-width: 590px; margin: 0; color: var(--muted); font-size: 17px; }
+    .signal { min-height: 180px; padding: 24px; border-left: 1px solid var(--teal); background: linear-gradient(120deg, rgba(98,213,190,.12), transparent); }
+    .signal strong { display: block; margin: 18px 0 6px; font: 500 31px Georgia, serif; }
+    .signal span { color: var(--muted); }
+    .workspace { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .card { position: relative; overflow: hidden; padding: 24px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); box-shadow: 0 20px 60px rgba(0,0,0,.2); backdrop-filter: blur(18px); animation: rise .7s .18s ease both; }
+    .card::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, rgba(255,255,255,.07), transparent 35%); }
+    .card h2 { margin: 0 0 6px; font: 500 25px Georgia, serif; }
+    .card p { margin: 0 0 20px; color: var(--muted); }
+    .drop { display: grid; place-items: center; min-height: 170px; padding: 20px; border: 1px dashed rgba(98,213,190,.45); border-radius: 9px; text-align: center; background: rgba(98,213,190,.035); transition: .3s ease; cursor: pointer; }
+    .drop:hover, .drop.ready { border-color: var(--teal); background: rgba(98,213,190,.1); transform: translateY(-2px); }
+    .drop-icon { display: grid; place-items: center; width: 54px; height: 54px; margin: 0 auto 12px; border-radius: 50%; color: var(--teal); background: rgba(98,213,190,.12); font-size: 24px; }
+    .drop strong { display: block; font-size: 16px; }
+    .drop small { display: block; margin-top: 6px; color: var(--muted); }
+    input[type=file] { display: none; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    button { border: 1px solid transparent; border-radius: 7px; padding: 11px 16px; color: #08201e; background: var(--teal); cursor: pointer; font: inherit; font-weight: 700; transition: transform .22s ease, box-shadow .22s ease, background .22s ease; }
+    button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 9px 24px rgba(98,213,190,.2); }
+    button.secondary { color: var(--ink); border-color: var(--line); background: transparent; }
+    button.recording { color: #fff; background: #c35d5d; animation: pulse 1.3s infinite; }
+    button:disabled { opacity: .42; cursor: not-allowed; }
+    audio { width: 100%; margin-top: 14px; }
+    .statusbar { display: flex; align-items: center; gap: 12px; min-height: 45px; margin-top: 16px; padding: 12px 15px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); background: rgba(4, 14, 16, .3); }
+    .statusbar.busy .status-dot { background: var(--gold); animation: pulse 1s infinite; }
+    .status-dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: var(--teal); }
+    .result { display: none; grid-column: 1 / -1; animation: reveal .65s ease both; }
+    .result.visible { display: block; }
+    .result-head { display: flex; justify-content: space-between; align-items: start; gap: 20px; }
+    .result h2 { margin: 0; font: 500 32px Georgia, serif; }
+    .result-score { color: var(--teal); font: 500 45px Georgia, serif; }
+    .result-score.abstain, .result-label.abstain { color: var(--gold); }
+    .result-label { margin-top: 5px; color: var(--teal); font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 26px; }
+    .metric { padding: 15px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.035); }
+    .metric label { display: flex; justify-content: space-between; margin-bottom: 9px; color: var(--muted); font-size: 12px; }
+    .track { height: 7px; overflow: hidden; border-radius: 9px; background: #263d3d; }
+    .track i { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--teal); transition: width 1s cubic-bezier(.22, 1, .36, 1); }
+    .disclaimer { margin: 18px 0 0; color: var(--muted); font-size: 12px; }
+    .highlight-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px; }
+    .highlight { padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.035); }
+    .highlight small, .highlight em { display: block; color: var(--muted); font-size: 11px; font-style: normal; }
+    .highlight strong { display: block; margin: 3px 0; font-size: 15px; }
+    video { width: 100%; max-height: 240px; margin-top: 14px; border-radius: 8px; background: #061012; }
+    .error { color: var(--red); }
+    @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes reveal { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 50% { box-shadow: 0 0 0 7px rgba(242,196,119,.08); } }
+    @media (max-width: 760px) { .hero { grid-template-columns: 1fr; padding-top: 54px; } .workspace { grid-template-columns: 1fr; } .metrics, .highlight-list { grid-template-columns: 1fr 1fr; } .result { grid-column: auto; } .topbar { align-items: flex-start; flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar"><div class="brand"><span class="brand-mark">+</span> Multimodal review</div><div class="connection"><span id="connectionDot" class="dot"></span><span id="connectionText">Checking backend 8008</span></div></header>
+    <section class="hero"><div><div class="eyebrow">Voice + movement</div><h1>Two signals.<br><em>One review.</em></h1><p class="hero-copy">Pair a clean voice recording with a gait video. The system reports a result only when both signals provide usable evidence.</p></div><div class="signal"><div class="eyebrow">Decision policy</div><strong>Evidence first.</strong><span>Uncertain inputs become inconclusive instead of being turned into a confident-looking guess.</span></div></section>
+    <section class="workspace">
+      <article class="card"><h2>Voice signal</h2><p>Upload a file or record a clear 3-10 second sample.</p><label class="drop" id="voiceDrop" for="voiceFile"><span><span class="drop-icon">◉</span><strong id="voiceName">Choose voice recording</strong><small id="voiceMeta">WAV or MP3</small></span></label><input id="voiceFile" type="file" accept=".wav,.mp3,audio/wav,audio/mpeg,audio/mp3"><div class="actions"><button id="startRecord" type="button">Record voice</button><button id="stopRecord" class="secondary" type="button" disabled>Stop</button></div><audio id="preview" controls hidden></audio></article>
+      <article class="card"><h2>Gait signal</h2><p>Use a steady side or walking video with the full body visible.</p><label class="drop" id="gaitDrop" for="gaitFile"><span><span class="drop-icon">↗</span><strong id="gaitName">Choose gait video</strong><small id="gaitMeta">MP4, MOV, or AVI</small></span></label><input id="gaitFile" type="file" accept="video/*,.mp4,.mov,.avi" capture="environment"><div class="actions"><button id="startGait" type="button">Use phone camera</button><button id="stopGait" class="secondary" type="button" disabled>Stop camera</button><button id="health" class="secondary" type="button">Check backend</button></div><video id="gaitPreview" controls playsinline muted hidden></video></article>
+      <div id="status" class="statusbar" role="status"><span class="status-dot"></span><span>Choose both signals to begin.</span></div>
+      <button id="analyze" type="button" disabled style="grid-column:1/-1;width:100%;padding:17px;font-size:16px;">Run fused analysis</button>
+      <article id="result" class="card result"><div class="result-head"><div><h2 id="resultTitle">Fusion result</h2><div id="resultLabel" class="result-label">Waiting</div></div><div id="resultScore" class="result-score">--</div></div><div class="metrics"><div class="metric"><label><span>Voice risk</span><strong id="voiceScore">--</strong></label><div class="track"><i id="voiceBar"></i></div></div><div class="metric"><label><span>Gait risk</span><strong id="gaitScore">--</strong></label><div class="track"><i id="gaitBar"></i></div></div></div><h3>Voice markers</h3><div id="voiceHighlights" class="highlight-list"></div><h3>Gait markers</h3><div id="gaitHighlights" class="highlight-list"></div><p class="disclaimer">Screening output only. An inconclusive result means the modalities disagree or the input quality was insufficient for a responsible classification.</p></article>
+    </section>
+  </main>
+  <script>
+    const PC_IP = '192.168.29.242';
+    const BACKEND = 'http://' + PC_IP + ':8008';
+    let recorder;
+    let chunks = [];
+    let stream;
+    let voiceBlob;
+    let voiceName = '';
+    let gaitRecorder;
+    let gaitChunks = [];
+    let gaitStream;
+    let gaitBlob;
+    let remoteGaitReady = false;
+    let remoteGaitSignature = localStorage.getItem('fusedLastSeenGait') || '';
+    let remoteGaitBaselineSet = Boolean(remoteGaitSignature);
+    const pageOpenedAt = Date.now();
+    const voiceFile = document.getElementById('voiceFile'); const gaitFile = document.getElementById('gaitFile'); const analyze = document.getElementById('analyze'); const status = document.getElementById('status'); const statusText = status.querySelector('span:last-child');
+    function setStatus(message, busy = false, error = false) { statusText.textContent = message; status.classList.toggle('busy', busy); status.classList.toggle('error', error); }
+    function setReady() { analyze.disabled = !(voiceFile.files[0] || voiceBlob) || !(gaitFile.files[0] || gaitBlob || remoteGaitReady); }
+    async function uploadGaitToPc(file, name) {
+      const form = new FormData(); form.append('gait', file, name || 'phone_gait.webm');
+      const controller = new AbortController();
+      // Large Pixel 7a 4K clips can take longer to upload and normalize;
+      // the fused analysis timeout remains separate below.
+      const timeout = setTimeout(() => controller.abort(), 120000);
+      let response;
+      try {
+        response = await fetch(BACKEND + '/upload-gait', { method: 'POST', body: form, signal: controller.signal });
+      } finally {
+        clearTimeout(timeout);
+      }
+      if (!response.ok) throw new Error('Phone video upload failed');
+      const uploaded = await response.json();
+      gaitFile.value = '';
+      gaitBlob = null;
+      remoteGaitReady = true;
+      remoteGaitSignature = String(uploaded.bytes || '') + ':' + String(uploaded.updated_at || '');
+      document.getElementById('gaitName').textContent = 'Phone gait received';
+      document.getElementById('gaitMeta').textContent = Math.round(Number(uploaded.bytes || 0) / 1024) + ' KB available on PC';
+      setReady(); setStatus('Phone gait video is now available to the model.');
+    }
+    function describe(input, nameId, metaId, dropId) { const file = input.files[0]; if (!file) return; document.getElementById(nameId).textContent = file.name; document.getElementById(metaId).textContent = Math.max(1, Math.round(file.size / 1024)) + ' KB ready'; document.getElementById(dropId).classList.add('ready'); setReady(); }
+    voiceFile.onchange = () => { voiceBlob = null; describe(voiceFile, 'voiceName', 'voiceMeta', 'voiceDrop'); };
+    gaitFile.onchange = () => {
+      gaitBlob = null;
+      const file = gaitFile.files[0];
+      describe(gaitFile, 'gaitName', 'gaitMeta', 'gaitDrop');
+      if (!file) return;
+      const phoneBrowser = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (phoneBrowser) {
+        setStatus('Recorded gait selected. Uploading to the PC model...', true);
+        uploadGaitToPc(file, file.name).catch(error => setStatus('Phone gait upload failed: ' + error.message, false, true));
+      } else {
+        setStatus('Gait video ready. Add a voice signal to continue.');
+      }
+    };
+    function wav(buffer) { const samples = buffer.getChannelData(0); const output = new ArrayBuffer(44 + samples.length * 2); const view = new DataView(output); const text = (offset, value) => [...value].forEach((c, i) => view.setUint8(offset + i, c.charCodeAt(0))); text(0, 'RIFF'); view.setUint32(4, 36 + samples.length * 2, true); text(8, 'WAVE'); text(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, buffer.sampleRate, true); view.setUint32(28, buffer.sampleRate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true); text(36, 'data'); view.setUint32(40, samples.length * 2, true); samples.forEach((sample, i) => view.setInt16(44 + i * 2, Math.max(-1, Math.min(1, sample)) * (sample < 0 ? 0x8000 : 0x7fff), true)); return new Blob([view], { type: 'audio/wav' }); }
+    document.getElementById('startRecord').onclick = async () => { try { if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setStatus('Opening file picker for voice recording...', false, false); voiceFile.click(); return; } stream = await navigator.mediaDevices.getUserMedia({ audio: true }); chunks = []; recorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' }); recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); }; recorder.onstop = async () => { try { const raw = new Blob(chunks, { type: recorder.mimeType }); const context = new (window.AudioContext || window.webkitAudioContext)(); voiceBlob = wav(await context.decodeAudioData(await raw.arrayBuffer())); await context.close(); voiceName = 'live_voice.wav'; document.getElementById('voiceName').textContent = 'Live voice recording'; document.getElementById('voiceMeta').textContent = Math.round(voiceBlob.size / 1024) + ' KB WAV ready'; document.getElementById('voiceDrop').classList.add('ready'); document.getElementById('preview').src = URL.createObjectURL(voiceBlob); document.getElementById('preview').hidden = false; setStatus('Voice signal ready. Add a gait video to continue.'); setReady(); } catch (error) { setStatus('Microphone conversion failed: ' + error.message, false, true); } stream.getTracks().forEach(track => track.stop()); }; recorder.start(); document.getElementById('startRecord').disabled = true; document.getElementById('startRecord').classList.add('recording'); document.getElementById('stopRecord').disabled = false; setStatus('Recording voice... speak steadily, then stop.', true); } catch (error) { setStatus('Microphone access failed: ' + error.message, false, true); } };
+    document.getElementById('stopRecord').onclick = () => { if (recorder && recorder.state === 'recording') recorder.stop(); document.getElementById('startRecord').disabled = false; document.getElementById('startRecord').classList.remove('recording'); document.getElementById('stopRecord').disabled = true; };
+    document.getElementById('startGait').onclick = async () => {
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          setStatus('Opening the phone camera recorder. Record the gait video, then return here.', false, false);
+          gaitFile.click();
+          return;
+        }
+        gaitStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+        gaitChunks = [];
+        const type = MediaRecorder.isTypeSupported('video/webm;codecs=vp8') ? 'video/webm;codecs=vp8' : 'video/webm';
+        gaitRecorder = new MediaRecorder(gaitStream, { mimeType: type });
+        gaitRecorder.ondataavailable = event => { if (event.data.size) gaitChunks.push(event.data); };
+        gaitRecorder.onstop = async () => {
+          gaitBlob = new Blob(gaitChunks, { type: gaitRecorder.mimeType || 'video/webm' });
+          const preview = document.getElementById('gaitPreview');
+          preview.src = URL.createObjectURL(gaitBlob); preview.hidden = false;
+          document.getElementById('gaitName').textContent = 'Phone gait recording';
+          document.getElementById('gaitMeta').textContent = Math.round(gaitBlob.size / 1024) + ' KB video ready';
+          document.getElementById('gaitDrop').classList.add('ready');
+          gaitStream.getTracks().forEach(track => track.stop());
+          setStatus('Uploading phone gait video to the model...', true); try { await uploadGaitToPc(gaitBlob, 'phone_gait.webm'); setStatus('Phone gait uploaded to the PC model.', false, false); } catch (error) { setStatus('Phone gait upload failed: ' + error.message + '. Keep both devices on the same Wi-Fi and use the PC URL.', false, true); }
+        };
+        gaitRecorder.start();
+        document.getElementById('startGait').disabled = true; document.getElementById('stopGait').disabled = false;
+          setStatus('Phone camera recording... stop to upload this clip to the PC model.', true);
+      } catch (error) { setStatus('Camera access failed: ' + error.message, false, true); }
+    };
+    document.getElementById('stopGait').onclick = () => {
+      if (gaitRecorder && gaitRecorder.state === 'recording') gaitRecorder.stop();
+      document.getElementById('startGait').disabled = false; document.getElementById('stopGait').disabled = true;
+    };
+    document.getElementById('health').onclick = async () => { try { const response = await fetch(BACKEND + '/health'); if (!response.ok) throw new Error('HTTP ' + response.status); document.getElementById('connectionDot').classList.add('live'); document.getElementById('connectionText').textContent = 'Backend 8008 connected'; setStatus('Backend connected. Both signals can be analyzed.'); } catch (error) { document.getElementById('connectionText').textContent = 'Backend unavailable'; setStatus('Cannot reach backend on port 8008.', false, true); } };
+    function renderResult(data) {
+      const title = (data.prediction && data.prediction.toLowerCase() !== 'inconclusive') ? data.prediction : 'Fusion result';
+      document.getElementById('resultTitle').textContent = title;
+      document.getElementById('resultLabel').textContent = 'Fused classification';
+      document.getElementById('resultLabel').classList.remove('abstain');
+      document.getElementById('resultScore').textContent = (data.fused_probability != null ? data.fused_probability : '--') + '%';
+      document.getElementById('resultScore').classList.remove('abstain');
+      document.getElementById('voiceScore').textContent = (data.voice_probability != null ? data.voice_probability : '--') + '%';
+      document.getElementById('gaitScore').textContent = (data.gait_probability != null ? data.gait_probability : '--') + '%';
+
+      const renderMarkers = markers => (markers || []).map(marker => '<div class="highlight"><small>' + (marker.name || '') + '</small><strong>' + (marker.value || '') + '</strong><em>' + (marker.signal || '') + '</em></div>').join('');
+      const voiceMarkers = data.voice?.highlights?.markers || data.voice?.highlights || [];
+      const gaitMarkers = data.gait?.highlights || [];
+      document.getElementById('voiceHighlights').innerHTML = renderMarkers(Array.isArray(voiceMarkers) ? voiceMarkers : []);
+      document.getElementById('gaitHighlights').innerHTML = renderMarkers(Array.isArray(gaitMarkers) ? gaitMarkers : []);
+      requestAnimationFrame(() => { document.getElementById('voiceBar').style.width = (data.voice_probability || 0) + '%'; document.getElementById('gaitBar').style.width = (data.gait_probability || 0) + '%'; });
+      document.getElementById('result').classList.add('visible');
+    }
+    analyze.onclick = async () => {
+      const voice = voiceFile.files[0] || voiceBlob;
+      const gait = remoteGaitReady ? null : (gaitFile.files[0] || gaitBlob);
+      if (!voice) { setStatus('Please provide a voice recording or file first.', false, true); return; }
+      if (!gait && !remoteGaitReady) { setStatus('Please provide a gait video first.', false, true); return; }
+      analyze.disabled = true; document.getElementById('result').classList.remove('visible'); setStatus('Extracting voice and gait signals...', true);
+      try {
+        const form = new FormData();
+        form.append('voice', voice, voiceFile.files[0]?.name || voiceName || 'live_voice.wav');
+        if (gait) {
+          form.append('gait', gait, gaitFile.files[0]?.name || 'phone_gait.webm');
+        } else {
+          form.append('gait_id', 'latest');
+        }
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 35000);
+        let response;
+        try {
+          response = await fetch(BACKEND + '/predict-fused', { method: 'POST', body: form, signal: controller.signal });
+        } finally {
+          clearTimeout(timeout);
+        }
+        let data;
+        try { data = await response.json(); } catch (e) { throw new Error('Backend returned invalid response (HTTP ' + response.status + ')'); }
+        if (!response.ok) throw new Error(data.detail || data.message || 'Fused analysis failed (HTTP ' + response.status + ')');
+        renderResult(data); setStatus('Analysis complete. Review the voice and gait markers below.');
+      } catch (error) { setStatus(error.name === 'AbortError' ? 'Analysis exceeded 35 seconds. Use a short voice sample and gait video.' : 'Error: ' + error.message, false, true); }
+      analyze.disabled = false; setReady();
+    };
+    setInterval(async () => { try { const response = await fetch(BACKEND + '/gait-latest', { cache: 'no-store' }); const data = await response.json(); const signature = data.status === 'ready' ? String(data.bytes) + ':' + String(data.updated_at) : ''; const uploadedAfterPageOpened = data.status === 'ready' && Number(data.updated_at) / 1000000 > pageOpenedAt; if (!remoteGaitBaselineSet) { remoteGaitBaselineSet = true; if (!uploadedAfterPageOpened) { remoteGaitSignature = signature; localStorage.setItem('fusedLastSeenGait', signature); return; } } if (signature && signature !== remoteGaitSignature) { remoteGaitSignature = signature; localStorage.setItem('fusedLastSeenGait', signature); remoteGaitReady = true; gaitFile.value = ''; gaitBlob = null; document.getElementById('gaitName').textContent = 'Phone gait received'; document.getElementById('gaitMeta').textContent = Math.round(data.bytes / 1024) + ' KB available on PC'; document.getElementById('gaitDrop').classList.add('ready'); setReady(); setStatus('Phone gait received. Starting fused analysis...', true); if (voiceFile.files[0] || voiceBlob) setTimeout(() => analyze.click(), 50); } } catch (error) {} }, 1500);
+    document.getElementById('health').click();
+  </script>
+</body>
+</html>

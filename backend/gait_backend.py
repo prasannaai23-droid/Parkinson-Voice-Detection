@@ -26,19 +26,46 @@ def predict_gait():
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 saved_files.append(filename)
     
-    import random
-    is_pd = random.choice([True, False])
-    prob = random.uniform(75.0, 95.0) if is_pd else random.uniform(5.0, 24.0)
-    msg = "Diagnosed" if is_pd else "Healthy"
+    import joblib
+    import numpy as np
+    from train_video_gait_model import extract_features_from_video
     
-    return jsonify({
-        "message": "Files analyzed successfully!",
-        "gait_probability": round(prob, 1),
-        "pd_probability": round(prob, 1),
-        "stride_variability": random.uniform(0.1, 0.3),
-        "stability_score": random.uniform(40, 80),
-        "prediction": msg 
-    })
+    try:
+        # Load model
+        model_path = os.path.join(os.path.dirname(__file__), 'models', 'video_gait_rf.pkl')
+        if not os.path.exists(model_path):
+            raise Exception("Model not trained yet.")
+            
+        model = joblib.load(model_path)
+        
+        # We assume the first uploaded file is the video
+        video_path = os.path.join(app.config['UPLOAD_FOLDER'], saved_files[0])
+        
+        # Extract features
+        features = extract_features_from_video(video_path, skip_frames=5)
+        if features is None or sum(features) == 0:
+            raise Exception("Could not extract features from video.")
+            
+        features = np.array(features).reshape(1, -1)
+        
+        # Predict
+        prob_pd = model.predict_proba(features)[0][1] * 100
+        is_pd = prob_pd > 50
+        
+        msg = "Pattern consistent with Parkinson's" if is_pd else "Healthy gait pattern detected"
+        
+        return jsonify({
+            "message": msg,
+            "gait_probability": round(prob_pd, 1),
+            "pd_probability": round(prob_pd, 1),
+            "stride_variability": features[0][1] / (features[0][0] + 1e-5), # std/mean of ankle distances
+            "stability_score": max(0, 100 - (features[0][2] * 100)), # Some pseudo-stability score based on ptp
+            "prediction": "Diagnosed" if is_pd else "Healthy"
+        })
+        
+    except Exception as e:
+        print("Prediction error:", str(e))
+        return jsonify({"error": "Gait analysis could not be completed"}), 422
 
 @app.route('/health', methods=['GET'])
 def health():

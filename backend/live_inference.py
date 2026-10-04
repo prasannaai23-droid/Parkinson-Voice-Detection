@@ -15,7 +15,6 @@ import numpy as np
 import pandas as pd
 import librosa
 import soundfile as sf
-import sounddevice as sd
 import joblib
 import json
 from pathlib import Path
@@ -137,20 +136,17 @@ def calculate_biomarker_risk(features_df):
 # --- PREDICTION CALIBRATION ---
 
 def calibrate_risk_percentage(ml_probability, biomarker_composite):
-    """
-    STRICT CALIBRATION: Prevents false positives for healthy patients
-    Forces probability to be < 25% or > 70%
-    """
-    base_prob = ml_probability * 100
-    
-    if base_prob < 50:
-        # Scale to 3% - 24% (Strictly < 25%)
-        final_prob = 3.0 + (base_prob / 50.0) * 21.0
-    else:
-        # Scale to 71% - 98% (Strictly > 70%)
-        final_prob = 71.0 + ((base_prob - 50.0) / 50.0) * 27.0
-        
-    return float(final_prob)
+    """Return the model probability without artificial probability amplification."""
+    return float(np.clip(ml_probability, 0.0, 1.0) * 100.0)
+
+
+def voice_evidence_is_unreliable(biomarkers):
+    """Reject strong classifications when recording quality corrupts biomarkers."""
+    return (
+        biomarkers.get("hnr_raw", 20.0) < 10.0
+        or biomarkers.get("jitter_raw", 0.0) > 0.02
+        or biomarkers.get("f0_mean_raw", 140.0) < 70.0
+    )
 
 # --- MODEL LOADING ---
 
@@ -203,6 +199,8 @@ def load_models():
 
 def record_audio(duration=RECORD_DURATION, sr=SAMPLE_RATE):
     """Record audio from microphone"""
+    import sounddevice as sd
+
     print(f"\n🎤 Recording for {duration} seconds...")
     print("   Please say 'ahhh' clearly")
     
@@ -227,17 +225,9 @@ def record_audio(duration=RECORD_DURATION, sr=SAMPLE_RATE):
 def predict_live(audio_path, models_dict, extract_func, scaler, threshold=0.5):
     """End-to-end inference for voice recordings"""
     try:
-        # 1. Load and denoise audio
-        y, sr = librosa.load(audio_path, sr=SAMPLE_RATE, mono=True)
-        y_denoised = denoise_audio(y, sr)
-        
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-            sf.write(tmp.name, y_denoised, sr)
-            temp_path = tmp.name
-        
-        # 2. Extract features
-        features_df = extract_func(temp_path)
-        os.unlink(temp_path)
+        # Extract exactly as the voice model was trained. Browser WAV/MP3 files
+        # must not be high-pass filtered and resaved before feature extraction.
+        features_df = extract_func(audio_path)
         
         # 3. Prepare features
         X = features_df.values.astype(np.float64)
@@ -277,34 +267,19 @@ def predict_live(audio_path, models_dict, extract_func, scaler, threshold=0.5):
         biomarkers = calculate_biomarker_risk(features_df)
         
         # 8. Calibrate final risk percentage
-        pd_probability = calibrate_risk_percentage(
-            ensemble_prob, 
-            biomarkers["biomarker_composite"]
-        )
-        
-        # --- NEW: APPLY HC_AH / PD_AH ANALYSIS RESULTS ---
-        path_upper = str(audio_path).upper()
-        
-        # Analyze actual acoustic patterns based on the biomarkers
-        comp = biomarkers.get("biomarker_composite", 0)
-        
-        if "LIVE_VOICE" in path_upper:
-            # If the live mic contains PD_AH patterns (high acoustic turbulence > 3.0), classify as High Risk
-            if comp > 3.0:
-                pd_probability = float(np.random.uniform(75.0, 92.0))
-            else:
-                pd_probability = float(np.random.uniform(5.0, 22.0))
-        elif "HC_AH" in path_upper:
-            pd_probability = float(np.random.uniform(5.0, 22.0))
-        elif "PD_AH" in path_upper:
-            pd_probability = float(np.random.uniform(75.0, 92.0))
-        # -------------------------------------------------
+        pd_probability = calibrate_risk_percentage(ensemble_prob, biomarkers["biomarker_composite"])
+
+        quality_gate = voice_evidence_is_unreliable(biomarkers)
+        if quality_gate:
+            pd_probability = 50.0
         
         # 9. Make final decision
-        if pd_probability > 70:
+        if pd_probability >= 65:
             risk_level = "HIGH"
-        elif pd_probability > 40:
+        elif pd_probability >= 55:
             risk_level = "MEDIUM"
+        elif 35 <= pd_probability < 55:
+            risk_level = "INCONCLUSIVE"
         else:
             risk_level = "LOW"
         
@@ -315,7 +290,13 @@ def predict_live(audio_path, models_dict, extract_func, scaler, threshold=0.5):
             "biomarkers": biomarkers,
             "pd_probability": pd_probability,
             "risk_level": risk_level,
-            "prediction": "Parkinson's Risk" if pd_probability > threshold * 100 else "Healthy",
+            "prediction": (
+                "Inconclusive" if quality_gate else
+                "Parkinson's Risk" if pd_probability >= 65 else
+                "Healthy" if pd_probability < 35 else
+                "Inconclusive"
+            ),
+            "quality_gate": quality_gate,
             "threshold": threshold
         }
         

@@ -6,6 +6,7 @@ with biomarker-informed probability mapping (Jitter, Shimmer, HNR, Pitch Dynamic
 """
 
 from contextlib import asynccontextmanager
+import asyncio
 import json
 import os
 import tempfile
@@ -17,9 +18,11 @@ import joblib
 import librosa
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, File, HTTPException, UploadFile
+import cv2
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
+from fused_inference import FusionInputError, fuse_probabilities, gait_highlights, predict_gait_probability
 from live_inference import calibrate_risk_percentage, predict_live
 warnings.filterwarnings("ignore")
 
@@ -29,6 +32,43 @@ tf = None
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent
 FRONTEND_FILE = PROJECT_ROOT / "frontend" / "predict_advanced.html"
+FUSED_FRONTEND_FILE = PROJECT_ROOT / "frontend" / "fused_ui.html"
+PHONE_GAIT_FRONTEND_FILE = PROJECT_ROOT / "frontend" / "phone_gait.html"
+REMOTE_GAIT_DIR = BASE_DIR / "temp_audio" / "remote_gait"
+REMOTE_GAIT_DIR.mkdir(parents=True, exist_ok=True)
+latest_gait = next(iter(sorted(REMOTE_GAIT_DIR.glob("latest.*"), key=lambda item: item.stat().st_mtime_ns, reverse=True)), None)
+
+
+def normalize_gait_video(source: Path) -> Path:
+    """Write a small analysis copy so high-resolution phone video is bounded."""
+    normalized = REMOTE_GAIT_DIR / "latest.mp4"
+    temporary = REMOTE_GAIT_DIR / "normalized_tmp.mp4"
+    capture = cv2.VideoCapture(str(source))
+    if not capture.isOpened():
+        return source
+    fps = capture.get(cv2.CAP_PROP_FPS) or 24.0
+    width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    scale = min(1.0, 640.0 / max(width, height, 1))
+    output_size = (max(2, int(width * scale)), max(2, int(height * scale)))
+    writer = cv2.VideoWriter(str(temporary), cv2.VideoWriter_fourcc(*"mp4v"), fps, output_size)
+    try:
+        frame_limit = int(fps * 2)
+        for _ in range(frame_limit):
+            ok, frame = capture.read()
+            if not ok:
+                break
+            writer.write(cv2.resize(frame, output_size))
+    finally:
+        capture.release()
+        writer.release()
+    if temporary.exists() and temporary.stat().st_size > 0:
+        if source != normalized:
+            source.unlink(missing_ok=True)
+        normalized.unlink(missing_ok=True)
+        temporary.replace(normalized)
+        return normalized
+    return source
 
 
 def find_models_dir() -> Path:
@@ -64,10 +104,9 @@ def try_import_advanced():
 
 
 LEGACY_MODELS = {
-    "svm_rbf": ["advanced_svm_rbf.pkl", "parkinsons_expert_v2.pkl"],
-    "random_forest": ["advanced_rf.pkl", "voice_rf_v2.pkl", "voice_rf.pkl"],
     "logistic": ["advanced_logistic.pkl"],
-    "xgboost": ["advanced_xgb.pkl", "voice_xgb_v2.pkl", "ensemble_xgb.pkl"],
+    "extra_trees": ["advanced_extra_trees.pkl"],
+    "random_forest": ["advanced_rf.pkl"],
 }
 SCALER_FILES = ["advanced_scaler.pkl", "voice_scaler_v2.pkl", "unified_scaler_fixed.pkl"]
 METADATA_FILES = ["advanced_metadata.json", "voice_model_v2_metadata.json"]
@@ -117,8 +156,9 @@ def load_advanced_models():
     print(f"  Models directory: {MODELS_DIR}")
 
     model_metadata = load_metadata()
-    decision_threshold = float(model_metadata.get("decision_threshold", 0.5))
-    wanted = model_metadata.get("models") or LEGACY_MODELS
+    model_metadata["model_version"] = "voice-v2-direct-features"
+    decision_threshold = 0.5
+    wanted = LEGACY_MODELS
 
     advanced_models = {}
     for name, filenames in wanted.items():
@@ -163,6 +203,17 @@ async def lifespan(app: FastAPI):
     print("PARKINSON'S VOICE DETECTION - ADVANCED BACKEND")
     print("=" * 60)
     load_advanced_models()
+    # Pay the one-time librosa/numba initialization cost before the first user request.
+    try:
+        from advanced_features import extract_advanced_features
+        warmup_path = BASE_DIR / "models" / "voice_warmup.wav"
+        if not warmup_path.exists():
+            import soundfile as sf
+            sf.write(warmup_path, np.zeros(16000, dtype=np.float32), 16000)
+        await asyncio.to_thread(extract_advanced_features, str(warmup_path))
+        warmup_path.unlink(missing_ok=True)
+    except Exception as warmup_error:
+        print(f"[WARNING] Feature warmup failed: {warmup_error}")
     yield
     print("\nBackend shutting down...")
 
@@ -192,6 +243,46 @@ async def serve_app():
 @app.get("/app")
 async def serve_app_alias():
     return await serve_app()
+
+
+@app.get("/fused")
+async def serve_fused_app():
+    if FUSED_FRONTEND_FILE.exists():
+        return FileResponse(str(FUSED_FRONTEND_FILE), headers={"Cache-Control": "no-store, max-age=0"})
+    raise HTTPException(status_code=404, detail="Fused frontend not found")
+
+
+@app.get("/phone-gait")
+async def serve_phone_gait_app():
+    # Keep one shared interface: the phone records from fused_ui.html itself.
+    return RedirectResponse(url="/fused", status_code=307)
+
+
+@app.post("/upload-gait")
+async def upload_gait(gait: UploadFile = File(...)):
+    """Receive a phone-recorded gait video for the paired desktop session."""
+    global latest_gait
+    suffix = Path(gait.filename or ".webm").suffix or ".webm"
+    path = REMOTE_GAIT_DIR / f"latest{suffix}"
+    content = await gait.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="The captured gait video is empty")
+    path.write_bytes(content)
+    if suffix.lower() != ".mp4" or len(content) > 2_000_000:
+        path = await asyncio.to_thread(normalize_gait_video, path)
+    latest_gait = path
+    return {"status": "ready", "filename": gait.filename or path.name, "bytes": len(content), "updated_at": path.stat().st_mtime_ns}
+
+
+@app.get("/gait-latest")
+async def gait_latest():
+    global latest_gait
+    if latest_gait is None:
+        latest_gait = next(iter(sorted(REMOTE_GAIT_DIR.glob("latest.*"), key=lambda item: item.stat().st_mtime_ns, reverse=True)), None)
+    if latest_gait is None or not latest_gait.exists():
+        return {"status": "waiting"}
+    stats = latest_gait.stat()
+    return {"status": "ready", "filename": latest_gait.name, "bytes": stats.st_size, "updated_at": stats.st_mtime_ns}
 
 
 @app.get("/health")
@@ -245,6 +336,26 @@ def check_audio_quality(path: str) -> dict:
         }
 
 
+def build_voice_highlights(features_df, biomarkers, probability):
+    """Return human-readable acoustic evidence without turning it into a diagnosis."""
+    jitter = float(biomarkers["jitter_raw"])
+    shimmer = float(biomarkers["shimmer_raw"])
+    hnr = float(biomarkers["hnr_raw"])
+    f0_std = float(biomarkers["f0_std_raw"])
+    mfcc0 = float(features_df.get("mfcc_mean_0", pd.Series([0.0])).values[0])
+    noise_harmonic = 10.0 ** (-hnr / 10.0)
+    highlights = []
+    highlights.append({"name": "Jitter", "value": f"{jitter * 100:.3f}%", "signal": "elevated" if jitter > 0.01 else "within range"})
+    highlights.append({"name": "Shimmer", "value": f"{shimmer * 100:.2f}%", "signal": "elevated" if shimmer > 0.06 else "within range"})
+    highlights.append({"name": "HNR", "value": f"{hnr:.2f} dB", "signal": "lower" if hnr < 15 else "within range"})
+    highlights.append({"name": "Noise / harmonic", "value": f"{noise_harmonic:.3f}", "signal": "higher noise" if noise_harmonic > 0.03 else "lower noise"})
+    highlights.append({"name": "MFCC 0", "value": f"{mfcc0:.2f}", "signal": "spectral shape"})
+    highlights.append({"name": "Pitch variation", "value": f"{f0_std:.2f} Hz", "signal": "variable" if f0_std > 18 else "stable"})
+    return {
+        "model_probability": round(float(probability), 1),
+        "markers": highlights,
+        "interpretation": "Model evidence is borderline; repeat with a clean recording" if 35 <= probability < 65 else "Model evidence is internally consistent",
+    }
 @app.post("/predict")
 async def predict(
     voice: Optional[UploadFile] = File(default=None),
@@ -283,25 +394,25 @@ async def predict(
             threshold=decision_threshold,
         )
 
+        if live_result.get("error") or not live_result.get("probabilities"):
+            raise HTTPException(status_code=422, detail=live_result.get("error", "Voice prediction was unavailable"))
+
         features_df = live_result["features_df"]
         probabilities = live_result["probabilities"]
         ensemble_prob = live_result["ensemble_prob"]
         pd_probability = live_result["pd_probability"]
         biomarkers = live_result["biomarkers"]
+        if live_result.get("quality_gate"):
+            audio_quality["retest_recommended"] = True
+            audio_quality["issues"].append("Acoustic biomarkers are unreliable for a confident classification; record again in a quieter room.")
 
         # Determine clinical risk category
-        if pd_probability < 20.0:
-            risk = "Very Low Risk"
-        elif pd_probability <= 25.0:
+        if pd_probability < 35.0:
             risk = "Low Risk"
-        elif pd_probability < 50.0:
-            risk = "Low-Medium Risk"
-        elif pd_probability < 70.0:
-            risk = "Moderate Risk"
-        elif pd_probability < 85.0:
-            risk = "High Risk"
+        elif pd_probability < 65.0:
+            risk = "Inconclusive"
         else:
-            risk = "Very High Risk"
+            risk = "High Risk"
 
         # Calculate confidence & breakdown
         confidence_score = min(99.0, abs(pd_probability - 50.0) * 1.5 + 20.0)
@@ -334,6 +445,7 @@ async def predict(
             "pd_probability": round(pd_probability, 1),
             "risk_percent": round(pd_probability, 1),
             "risk_level": risk,
+            "prediction": live_result["prediction"],
             "confidence_score": round(confidence_score, 1),
             "risk_breakdown": {
                 "Low": low_score,
@@ -351,6 +463,7 @@ async def predict(
                 "f0_mean_hz": round(float(features_df.get("f0_mean", pd.Series([140.0])).values[0]), 1),
                 "f0_std_hz": round(biomarkers["f0_std_raw"], 2),
             },
+            "voice_highlights": build_voice_highlights(features_df, biomarkers, pd_probability),
             "audio_quality": audio_quality,
             "disclaimer": "AI Screening Tool for research and clinical assistance. Not a definitive standalone diagnosis.",
             "version": "3.1.0 - Calibrated Biomarker Fusion",
@@ -368,6 +481,111 @@ async def predict(
                 pass
 
 
+@app.post("/predict-fused")
+async def predict_fused(
+    voice: Optional[UploadFile] = File(default=None),
+    gait: Optional[UploadFile] = File(default=None),
+    gait_id: Optional[str] = Form(default=None),
+):
+    """Score voice and gait together, abstaining when evidence is unreliable."""
+    if not voice or (not gait and gait_id != "latest" and (latest_gait is None or not latest_gait.exists())):
+        raise HTTPException(status_code=400, detail="Please provide both a voice recording/file and a gait video.")
+
+    gait_model_path = MODELS_DIR / "video_gait_rf.pkl"
+    temp_paths = []
+    try:
+        temp_dir = BASE_DIR / "temp_audio"
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        
+        voice_suffix = Path(voice.filename or "voice.wav").suffix or ".wav"
+        voice_temp = tempfile.NamedTemporaryFile(suffix=voice_suffix, prefix="fused_voice_", dir=temp_dir, delete=False)
+        voice_temp.write(await voice.read())
+        voice_temp.close()
+        temp_paths.append(Path(voice_temp.name))
+
+        if gait:
+            gait_suffix = Path(gait.filename or "gait.mp4").suffix or ".mp4"
+            gait_temp = tempfile.NamedTemporaryFile(suffix=gait_suffix, prefix="fused_gait_", dir=temp_dir, delete=False)
+            gait_temp.write(await gait.read())
+            gait_temp.close()
+            temp_paths.append(Path(gait_temp.name))
+        elif latest_gait and latest_gait.exists():
+            gait_temp = tempfile.NamedTemporaryFile(suffix=latest_gait.suffix or ".mp4", prefix="fused_gait_", dir=temp_dir, delete=False)
+            gait_temp.write(latest_gait.read_bytes())
+            gait_temp.close()
+            temp_paths.append(Path(gait_temp.name))
+        else:
+            raise HTTPException(status_code=400, detail="No gait video uploaded or selected.")
+
+        try:
+            voice_result = await asyncio.wait_for(asyncio.to_thread(
+                predict_live,
+                str(temp_paths[0]),
+                advanced_models,
+                try_import_advanced(),
+                advanced_scaler,
+                decision_threshold,
+            ), timeout=15.0)
+        except asyncio.TimeoutError as exc:
+            raise FusionInputError("Voice extraction exceeded the analysis limit. Use a clear 3-5 second WAV recording and try again.") from exc
+        if voice_result.get("error") or not voice_result.get("probabilities"):
+            raise FusionInputError(voice_result.get("error", "Voice feature extraction failed. Please ensure a clear audio sample."))
+
+        # Gait model inference. Never replace failed pose extraction with a
+        # fabricated feature vector: that would turn missing evidence into a prediction.
+        gait_features = None
+        try:
+            from train_video_gait_model import extract_features_from_video
+            raw_features = await asyncio.wait_for(asyncio.to_thread(
+                extract_features_from_video, str(temp_paths[1]), skip_frames=30, max_frames=5
+            ), timeout=12.0)
+        except asyncio.TimeoutError as exc:
+            raise FusionInputError("Gait extraction exceeded the analysis limit. Use a short, steady video with the full body visible.") from exc
+        if raw_features is not None and len(raw_features) == 12 and np.isfinite(raw_features).all() and any(f != 0.0 for f in raw_features):
+            gait_features = raw_features
+        else:
+            raise FusionInputError("No reliable pose landmarks found. Use a 5-10 second front or side video with the person's head, knees, ankles, and feet fully visible, good lighting, and no furniture blocking the body.")
+
+        if gait_features is None:
+            raise FusionInputError("No reliable pose landmarks found. Use a 5-10 second front or side video with the person's head, knees, ankles, and feet fully visible, good lighting, and no furniture blocking the body.")
+        if not gait_model_path.exists():
+            raise FusionInputError("The gait model is not available. Train the video gait model before running fused analysis.")
+        gait_model = joblib.load(gait_model_path)
+        gait_probability = predict_gait_probability(gait_model, gait_features)
+
+        fused = fuse_probabilities(voice_result["pd_probability"] / 100.0, gait_probability)
+
+        return {
+            "status": "success",
+            **fused,
+            "voice": {
+                "prediction": voice_result.get("prediction", "Healthy"),
+                "risk_percent": round(voice_result.get("pd_probability", 50.0), 1),
+                "highlights": build_voice_highlights(
+                    voice_result.get("features_df", pd.DataFrame()),
+                    voice_result.get("biomarkers", {"jitter_raw": 0.005, "shimmer_raw": 0.03, "hnr_raw": 20.0, "f0_std_raw": 10.0}),
+                    voice_result.get("pd_probability", 50.0),
+                ),
+            },
+            "gait": {
+                "risk_percent": round(gait_probability * 100.0, 1),
+                "highlights": gait_highlights(gait_features),
+            },
+            "disclaimer": "Multimodal AI screening output. Inconclusive findings indicate borderline signals or modality disagreement.",
+        }
+    except FusionInputError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        print(f"Fused prediction error: {exc}")
+        raise HTTPException(status_code=500, detail=f"Fused prediction error: {str(exc)}") from exc
+    finally:
+        for path in temp_paths:
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8008)

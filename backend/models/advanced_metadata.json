@@ -1,6 +1,6 @@
 {
   "model_version": "3.0",
-  "creation_date": "2026-08-16T19:35:25.523486",
+  "creation_date": "2026-09-14T18:36:02.876285",
   "feature_count": 215,
   "features_selected": 40,
   "feature_extractor": "advanced_features.extract_advanced_features (215 features)",
@@ -13,59 +13,51 @@
   },
   "scaler_type": "RobustScaler",
   "calibration": "sigmoid (Platt) inside a 5-fold inner CV",
-  "validation": "5-fold stratified CV repeated 6x",
+  "validation": "5-fold stratified CV repeated 1x",
   "cross_validated_scores": {
     "logistic": {
-      "auc": 0.781712962962963,
-      "auc_std": 0.07413273501905913,
-      "accuracy": 0.711642156862745,
-      "accuracy_std": 0.0840226143157615,
-      "sensitivity": 0.6958333333333333,
-      "specificity": 0.7277777777777779
-    },
-    "svm_rbf": {
-      "auc": 0.8060763888888889,
-      "auc_std": 0.07737181950539293,
-      "accuracy": 0.7199754901960784,
-      "accuracy_std": 0.0813493832191404,
-      "sensitivity": 0.7083333333333334,
-      "specificity": 0.7319444444444445
+      "auc": 0.7722222222222223,
+      "auc_std": 0.034711803992586616,
+      "accuracy": 0.6919117647058823,
+      "accuracy_std": 0.051491592352975284,
+      "sensitivity": 0.675,
+      "specificity": 0.7055555555555555
     },
     "random_forest": {
-      "auc": 0.7714699074074074,
-      "auc_std": 0.08180932261050308,
-      "accuracy": 0.7078431372549019,
-      "accuracy_std": 0.08047879119601736,
-      "sensitivity": 0.6875,
-      "specificity": 0.7277777777777779
+      "auc": 0.7760416666666667,
+      "auc_std": 0.0439479648119354,
+      "accuracy": 0.7147058823529411,
+      "accuracy_std": 0.06725429457223013,
+      "sensitivity": 0.7,
+      "specificity": 0.7277777777777777
     },
     "extra_trees": {
-      "auc": 0.7730324074074075,
-      "auc_std": 0.08504574184782673,
-      "accuracy": 0.6955882352941177,
-      "accuracy_std": 0.08486411215418782,
-      "sensitivity": 0.6583333333333333,
-      "specificity": 0.7324074074074074
+      "auc": 0.757638888888889,
+      "auc_std": 0.06425581529622604,
+      "accuracy": 0.6661764705882354,
+      "accuracy_std": 0.05232484374899177,
+      "sensitivity": 0.625,
+      "specificity": 0.7055555555555555
     },
     "xgboost": {
-      "auc": 0.744386574074074,
-      "auc_std": 0.08754279906273468,
-      "accuracy": 0.6854166666666668,
-      "accuracy_std": 0.08648531856771156,
-      "sensitivity": 0.6625,
-      "specificity": 0.7069444444444445
+      "auc": 0.7097222222222223,
+      "auc_std": 0.0776754038560311,
+      "accuracy": 0.6176470588235294,
+      "accuracy_std": 0.057803658844216316,
+      "sensitivity": 0.6,
+      "specificity": 0.6333333333333333
     }
   },
   "ensemble_members": [
-    "svm_rbf",
+    "random_forest",
     "logistic",
     "extra_trees"
   ],
-  "ensemble_auc": 0.7932926829268293,
-  "ensemble_accuracy": 0.7160493827160493,
-  "decision_threshold": 0.30999999999999994,
+  "ensemble_auc": 0.7591463414634146,
+  "ensemble_accuracy": 0.691358024691358,
+  "decision_threshold": 0.4099999999999999,
   "models": {
-    "svm_rbf": "advanced_svm_rbf.pkl",
+    "random_forest": "advanced_rf.pkl",
     "logistic": "advanced_logistic.pkl",
     "extra_trees": "advanced_extra_trees.pkl"
   }

@@ -59,7 +59,7 @@ HEALTHY_DIRS = ("healthy", "HC_AH", "hc")
 PD_DIRS = ("pd", "PD_AH", "parkinsons")
 
 N_SPLITS = 5
-N_REPEATS = 6
+N_REPEATS = 1
 RANDOM_STATE = 42
 
 
@@ -119,13 +119,11 @@ def candidate_models(n_pos, n_neg):
     scale_pos_weight = n_neg / max(n_pos, 1)
     models = {
         "logistic": LogisticRegression(C=0.1, class_weight="balanced", max_iter=5000),
-        "svm_rbf": SVC(C=1.0, gamma="scale", class_weight="balanced", probability=True,
-                       random_state=RANDOM_STATE),
         "random_forest": RandomForestClassifier(
-            n_estimators=500, min_samples_leaf=2, max_features="sqrt",
+            n_estimators=100, min_samples_leaf=2, max_features="sqrt",
             class_weight="balanced_subsample", random_state=RANDOM_STATE, n_jobs=-1),
         "extra_trees": ExtraTreesClassifier(
-            n_estimators=500, min_samples_leaf=2, max_features="sqrt",
+            n_estimators=100, min_samples_leaf=2, max_features="sqrt",
             class_weight="balanced", random_state=RANDOM_STATE, n_jobs=-1),
     }
     try:

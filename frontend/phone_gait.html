@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>Gait Capture – Phone</title>
+  <style>
+    :root { color-scheme: dark; --ink: #f1f6f3; --muted: #9eb4b0; --line: rgba(214,239,229,.14); --panel: rgba(20,38,36,.82); --teal: #62d5be; --gold: #f2c477; --red: #f28b85; --bg: #0b191b; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--ink); font: 16px/1.5 "Segoe UI", sans-serif; background: radial-gradient(circle at 12% 10%,#19423d 0,transparent 32%), radial-gradient(circle at 92% 18%,#39351f 0,transparent 25%), linear-gradient(135deg,#0b191b,#122b2b 54%,#151d20); padding: 24px 16px; }
+
+    .container { width: 100%; max-width: 420px; }
+    .brand { text-align: center; margin-bottom: 28px; }
+    .brand-icon { display: inline-grid; place-items: center; width: 48px; height: 48px; border: 1px solid rgba(98,213,190,.6); border-radius: 50%; color: var(--teal); font-size: 22px; box-shadow: 0 0 28px rgba(98,213,190,.2); margin-bottom: 10px; }
+    .brand h1 { font: 500 26px Georgia, serif; margin-bottom: 4px; }
+    .brand p { color: var(--muted); font-size: 14px; }
+
+    .card { padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); backdrop-filter: blur(18px); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+
+    .capture-area { display: grid; place-items: center; min-height: 180px; padding: 24px; border: 2px dashed rgba(98,213,190,.45); border-radius: 12px; text-align: center; background: rgba(98,213,190,.035); cursor: pointer; transition: .3s ease; }
+    .capture-area:active { border-color: var(--teal); background: rgba(98,213,190,.12); transform: scale(.98); }
+    .capture-area.ready { border-color: var(--teal); border-style: solid; background: rgba(98,213,190,.1); }
+    .capture-icon { font-size: 42px; margin-bottom: 8px; }
+    .capture-area strong { display: block; font-size: 18px; margin-bottom: 4px; }
+    .capture-area small { color: var(--muted); }
+    input[type=file] { display: none; }
+
+    video { width: 100%; border-radius: 10px; margin-top: 16px; background: #061012; }
+
+    .actions { display: flex; gap: 10px; margin-top: 18px; }
+    button { flex: 1; border: none; border-radius: 10px; padding: 15px 12px; font: 700 16px/1 "Segoe UI", sans-serif; cursor: pointer; transition: .22s ease; }
+    button:active:not(:disabled) { transform: scale(.96); }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-primary { color: #08201e; background: var(--teal); }
+    .btn-secondary { color: var(--ink); background: rgba(255,255,255,.08); border: 1px solid var(--line); }
+
+    .status { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding: 14px 16px; border-radius: 10px; background: rgba(4,14,16,.4); border: 1px solid var(--line); font-size: 14px; min-height: 50px; }
+    .status-dot { width: 10px; height: 10px; flex-shrink: 0; border-radius: 50%; background: var(--muted); transition: .3s; }
+    .status-dot.ok { background: var(--teal); box-shadow: 0 0 12px var(--teal); }
+    .status-dot.busy { background: var(--gold); animation: pulse 1s infinite; }
+    .status-dot.err { background: var(--red); }
+
+    .connection { text-align: center; margin-top: 18px; color: var(--muted); font-size: 13px; }
+    .connection a { color: var(--teal); }
+
+    @keyframes pulse { 50% { opacity: .4; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="brand">
+      <div class="brand-icon">+</div>
+      <h1>Gait Capture</h1>
+      <p>Record or pick a walking video. It will be sent to your PC for analysis.</p>
+    </div>
+
+    <div class="card">
+      <!-- Option 1: Use camera directly (capture attribute works on mobile without HTTPS) -->
+      <label class="capture-area" id="captureArea" for="gaitInput">
+        <span>
+          <span class="capture-icon">🎥</span>
+          <strong id="fileName">Tap to record or choose video</strong>
+          <small id="fileMeta">Opens your camera or gallery</small>
+        </span>
+      </label>
+      <!-- capture="environment" opens the rear camera on mobile -->
+      <input type="file" id="gaitInput" accept="video/*" capture="environment">
+
+      <video id="preview" controls playsinline muted hidden></video>
+
+      <div class="actions">
+        <button id="sendBtn" class="btn-primary" disabled>Send to PC</button>
+        <button id="clearBtn" class="btn-secondary" disabled>Clear</button>
+      </div>
+
+      <div class="status">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Select a gait video to begin</span>
+      </div>
+    </div>
+
+    <div class="connection">
+      Connected to <span id="backendUrl">...</span>
+    </div>
+  </div>
+
+  <script>
+    // Auto-detect backend from the URL this page was served from
+    const BACKEND = window.location.origin;
+    document.getElementById('backendUrl').textContent = BACKEND;
+
+    const gaitInput  = document.getElementById('gaitInput');
+    const sendBtn    = document.getElementById('sendBtn');
+    const clearBtn   = document.getElementById('clearBtn');
+    const preview    = document.getElementById('preview');
+    const captureArea = document.getElementById('captureArea');
+    const statusDot  = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+
+    let selectedFile = null;
+
+    function setStatus(msg, state) {
+      statusText.textContent = msg;
+      statusDot.className = 'status-dot' + (state ? ' ' + state : '');
+    }
+
+    async function uploadSelected() {
+      if (!selectedFile) return;
+      sendBtn.disabled = true;
+      clearBtn.disabled = true;
+      setStatus('Uploading to PC...', 'busy');
+      try {
+        const form = new FormData();
+        form.append('gait', selectedFile, selectedFile.name);
+        const res = await fetch(BACKEND + '/upload-gait', { method: 'POST', body: form });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || 'Upload failed (HTTP ' + res.status + ')');
+        }
+        const data = await res.json();
+        setStatus('✓ Sent! ' + Math.round(data.bytes / 1024) + ' KB received by PC. Return to the model.', 'ok');
+        sendBtn.textContent = '✓ Sent';
+      } catch (e) {
+        setStatus('Error: ' + e.message, 'err');
+        sendBtn.disabled = false;
+      }
+      clearBtn.disabled = false;
+    }
+
+    // Camera confirmation selects the file and immediately sends it to the PC.
+    gaitInput.addEventListener('change', () => {
+      const file = gaitInput.files[0];
+      if (!file) return;
+      selectedFile = file;
+
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('fileMeta').textContent = (file.size / 1024 / 1024).toFixed(1) + ' MB ready';
+      captureArea.classList.add('ready');
+
+      preview.src = URL.createObjectURL(file);
+      preview.hidden = false;
+
+      sendBtn.disabled = false;
+      clearBtn.disabled = false;
+      setStatus('Video selected. Sending to PC...', 'busy');
+      uploadSelected();
+    });
+
+    // Clear selection
+    clearBtn.addEventListener('click', () => {
+      selectedFile = null;
+      gaitInput.value = '';
+      preview.hidden = true;
+      preview.src = '';
+      captureArea.classList.remove('ready');
+      document.getElementById('fileName').textContent = 'Tap to record or choose video';
+      document.getElementById('fileMeta').textContent = 'Opens your camera or gallery';
+      sendBtn.disabled = true;
+      clearBtn.disabled = true;
+      setStatus('Select a gait video to begin', '');
+    });
+
+    sendBtn.addEventListener('click', uploadSelected);
+
+    // Check backend connectivity on load
+    (async () => {
+      try {
+        const res = await fetch(BACKEND + '/health');
+        if (res.ok) setStatus('Connected to PC. Record or choose a walking video.', 'ok');
+        else setStatus('PC backend responded with error.', 'err');
+      } catch {
+        setStatus('Cannot reach PC backend at ' + BACKEND, 'err');
+      }
+    })();
+  </script>
+</body>
+</html>

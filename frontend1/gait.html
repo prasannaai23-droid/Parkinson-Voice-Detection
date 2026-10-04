@@ -3,83 +3,189 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gait Pattern Screening - Separate Frontend</title>
+  <title>Gait Pattern Screening - Advanced AI Analysis</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       color: #e7efe9;
       min-height: 100vh;
-      background:
-        radial-gradient(circle at top left, rgba(116, 163, 136, 0.18), transparent 28%),
-        radial-gradient(circle at bottom right, rgba(198, 156, 86, 0.16), transparent 26%),
-        linear-gradient(135deg, #10201a 0%, #173126 45%, #1e2b35 100%);
+      background: linear-gradient(135deg, #0f1d1a 0%, #1a2f2a 40%, #142020 100%);
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Animated background particles */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(circle at 20% 30%, rgba(120, 194, 145, 0.15), transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(86, 160, 185, 0.12), transparent 35%),
+        radial-gradient(circle at 40% 80%, rgba(198, 156, 86, 0.1), transparent 30%);
+      animation: gradientShift 15s ease-in-out infinite;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    @keyframes gradientShift {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(30px, -30px) scale(1.05); }
+    }
+
+    /* Floating particles animation */
+    @keyframes float {
+      0%, 100% { transform: translateY(0) translateX(0) rotateZ(0deg); opacity: 0.3; }
+      50% { transform: translateY(-20px) translateX(10px) rotateZ(180deg); opacity: 0.8; }
+    }
+
+    .particle {
+      position: fixed;
+      width: 2px;
+      height: 2px;
+      background: rgba(155, 229, 174, 0.6);
+      border-radius: 50%;
+      animation: float 6s infinite ease-in-out;
+      pointer-events: none;
+      z-index: -1;
     }
 
     .shell {
-      max-width: 1280px;
+      max-width: 1400px;
       margin: 0 auto;
-      padding: 28px 18px 40px;
+      padding: 40px 20px 60px;
+      position: relative;
+      z-index: 1;
     }
 
+    /* Enhanced Hero Section */
     .hero {
       display: grid;
       grid-template-columns: 1.3fr 0.7fr;
-      gap: 24px;
-      padding: 30px;
-      border-radius: 28px;
-      background: rgba(13, 23, 20, 0.72);
-      border: 1px solid rgba(183, 197, 187, 0.14);
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
-      backdrop-filter: blur(18px);
-      margin-bottom: 22px;
+      gap: 32px;
+      padding: 48px;
+      border-radius: 32px;
+      background: linear-gradient(135deg, 
+        rgba(13, 23, 20, 0.85) 0%,
+        rgba(20, 35, 30, 0.75) 100%);
+      border: 2px solid rgba(183, 197, 187, 0.2);
+      box-shadow: 
+        0 40px 80px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      margin-bottom: 32px;
+      transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      animation: shimmer 3s infinite;
+      z-index: 0;
+    }
+
+    @keyframes shimmer {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+
+    .hero > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero:hover {
+      box-shadow: 
+        0 60px 100px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      transform: translateY(-4px);
+      border-color: rgba(183, 197, 187, 0.35);
     }
 
     .hero h1 {
-      margin: 0 0 10px;
-      font-size: clamp(32px, 4vw, 52px);
-      line-height: 1.02;
-      letter-spacing: -0.03em;
+      margin: 0 0 16px;
+      font-size: clamp(36px, 5vw, 56px);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #9be5ae 0%, #d4e4d8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 900;
     }
 
     .hero p {
-      margin: 0 0 10px;
+      margin: 0 0 14px;
       color: #b9c7c0;
-      max-width: 62ch;
-      line-height: 1.6;
+      max-width: 65ch;
+      line-height: 1.7;
+      font-size: 15px;
     }
 
     .badge {
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      padding: 10px 14px;
+      padding: 12px 18px;
       border-radius: 999px;
-      background: rgba(71, 140, 100, 0.16);
-      border: 1px solid rgba(143, 191, 160, 0.24);
+      background: linear-gradient(135deg, 
+        rgba(71, 140, 100, 0.25), 
+        rgba(86, 160, 185, 0.15));
+      border: 1.5px solid rgba(143, 191, 160, 0.4);
       color: #d6f0df;
       font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
+      font-weight: 800;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      margin-bottom: 14px;
+      margin-bottom: 18px;
+      box-shadow: 0 8px 20px rgba(71, 140, 100, 0.15);
+      transition: all 0.3s ease;
+    }
+
+    .badge:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(71, 140, 100, 0.25);
+      border-color: rgba(143, 191, 160, 0.6);
+    }
+
+    .badge i {
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
     }
 
     .hero-visual {
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 220px;
-      border-radius: 24px;
-      background:
-        linear-gradient(180deg, rgba(18, 36, 30, 0.1), rgba(18, 36, 30, 0.42)),
-        radial-gradient(circle at center, rgba(109, 171, 128, 0.22), transparent 60%);
-      border: 1px solid rgba(143, 191, 160, 0.14);
+      min-height: 260px;
+      border-radius: 28px;
+      background: linear-gradient(180deg, 
+        rgba(18, 36, 30, 0.2), 
+        rgba(18, 36, 30, 0.6)),
+        radial-gradient(circle at center, rgba(155, 229, 174, 0.25), transparent 65%);
+      border: 1.5px solid rgba(143, 191, 160, 0.2);
       position: relative;
       overflow: hidden;
+      box-shadow: inset 0 0 40px rgba(155, 229, 174, 0.1);
     }
 
     .hero-visual::before,
@@ -88,160 +194,379 @@
       position: absolute;
       inset: auto;
       border-radius: 999px;
-      background: rgba(219, 185, 111, 0.14);
-      filter: blur(2px);
-      animation: drift 8s ease-in-out infinite;
+      background: radial-gradient(circle, rgba(155, 229, 174, 0.3), transparent);
+      filter: blur(3px);
+      animation: orbit 8s ease-in-out infinite;
     }
 
-    .hero-visual::before { width: 170px; height: 170px; left: 18%; top: 18%; }
-    .hero-visual::after { width: 120px; height: 120px; right: 16%; bottom: 18%; animation-delay: -3s; }
+    .hero-visual::before { 
+      width: 200px; 
+      height: 200px; 
+      left: 15%; 
+      top: 20%; 
+      box-shadow: 0 0 40px rgba(155, 229, 174, 0.2);
+    }
 
-    @keyframes drift {
-      0%, 100% { transform: translateY(0) translateX(0); }
-      50% { transform: translateY(-12px) translateX(8px); }
+    .hero-visual::after { 
+      width: 140px; 
+      height: 140px; 
+      right: 12%; 
+      bottom: 20%; 
+      animation-delay: -4s; 
+      box-shadow: 0 0 30px rgba(86, 160, 185, 0.2);
+    }
+
+    @keyframes orbit {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-20px) scale(1.1); }
     }
 
     .footprint {
       position: relative;
-      z-index: 1;
-      font-size: 92px;
-      color: #cfe7d8;
-      text-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
+      z-index: 2;
+      font-size: 120px;
+      background: linear-gradient(135deg, #9be5ae, #d4f0df);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 40px rgba(155, 229, 174, 0.3);
+      filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.3));
+      animation: footstep 1.2s ease-in-out infinite;
+    }
+
+    @keyframes footstep {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-15px) scale(1.05); }
     }
 
     .grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 24px;
     }
 
+    /* Enhanced Panel Styling */
     .panel {
-      background: rgba(10, 18, 16, 0.76);
-      border: 1px solid rgba(183, 197, 187, 0.12);
-      border-radius: 24px;
-      padding: 24px;
-      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.16);
-      backdrop-filter: blur(16px);
+      background: linear-gradient(135deg, 
+        rgba(10, 18, 16, 0.85) 0%,
+        rgba(15, 25, 22, 0.75) 100%);
+      border: 1.5px solid rgba(183, 197, 187, 0.18);
+      border-radius: 28px;
+      padding: 32px;
+      box-shadow: 
+        0 30px 70px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(155, 229, 174, 0.1), transparent 70%);
+      animation: glow 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes glow {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.1); }
+    }
+
+    .panel:hover {
+      box-shadow: 
+        0 40px 90px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      border-color: rgba(183, 197, 187, 0.35);
+      transform: translateY(-6px);
     }
 
     .panel h2 {
-      margin: 0 0 18px;
-      font-size: 18px;
+      margin: 0 0 24px;
+      font-size: 20px;
       color: #d8efe0;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
+      font-weight: 800;
+      position: relative;
+      z-index: 1;
+    }
+
+    .panel h2 i {
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
     }
 
     .dropzone {
-      border: 2px dashed rgba(158, 197, 171, 0.34);
-      border-radius: 20px;
-      padding: 28px;
+      border: 2.5px dashed rgba(158, 197, 171, 0.45);
+      border-radius: 24px;
+      padding: 40px;
       text-align: center;
-      background: linear-gradient(180deg, rgba(44, 63, 53, 0.4), rgba(25, 39, 33, 0.56));
+      background: linear-gradient(135deg, 
+        rgba(44, 63, 53, 0.5), 
+        rgba(25, 39, 33, 0.7));
       cursor: pointer;
-      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dropzone::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at center, rgba(155, 229, 174, 0.1), transparent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
     }
 
     .dropzone:hover {
-      transform: translateY(-2px);
-      border-color: rgba(177, 222, 195, 0.58);
-      background: linear-gradient(180deg, rgba(54, 77, 65, 0.46), rgba(25, 39, 33, 0.68));
+      transform: translateY(-4px);
+      border-color: rgba(177, 222, 195, 0.75);
+      background: linear-gradient(135deg, 
+        rgba(54, 77, 65, 0.6), 
+        rgba(25, 39, 33, 0.8));
+      box-shadow: 0 20px 50px rgba(155, 229, 174, 0.15);
+    }
+
+    .dropzone:hover::after {
+      opacity: 1;
+    }
+
+    .dropzone.dragover {
+      border-color: rgba(177, 222, 195, 0.9);
+      background: linear-gradient(135deg, 
+        rgba(71, 140, 100, 0.4), 
+        rgba(25, 39, 33, 0.9));
+      box-shadow: 0 25px 60px rgba(155, 229, 174, 0.25);
     }
 
     .dropzone .icon {
-      font-size: 46px;
-      color: #9fe2b3;
-      margin-bottom: 10px;
+      font-size: 56px;
+      background: linear-gradient(135deg, #58a06f, #95d7a9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 14px;
+      animation: float 3s ease-in-out infinite;
     }
 
     .dropzone .title {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 6px;
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: #d8efe0;
     }
 
     .dropzone .sub {
       color: #b0c0b8;
-      font-size: 13px;
-      line-height: 1.5;
+      font-size: 14px;
+      line-height: 1.6;
     }
 
     input[type="file"] { display: none; }
 
     .meta {
-      margin-top: 14px;
+      margin-top: 18px;
+      padding: 12px 14px;
+      background: rgba(155, 229, 174, 0.08);
+      border-radius: 12px;
       color: #9fb3aa;
       font-size: 13px;
       line-height: 1.6;
+      border-left: 3px solid rgba(155, 229, 174, 0.3);
+      animation: slideIn 0.4s ease;
+    }
+
+    @keyframes slideIn {
+      from { 
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+      to { 
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
 
     .actions {
       display: flex;
-      gap: 12px;
+      gap: 14px;
       flex-wrap: wrap;
-      margin-top: 18px;
+      margin-top: 22px;
     }
 
     .btn {
       border: 0;
-      border-radius: 14px;
-      padding: 14px 18px;
+      border-radius: 16px;
+      padding: 16px 24px;
       font-weight: 800;
       cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       color: white;
       flex: 1;
-      min-width: 180px;
+      min-width: 160px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
+      font-size: 15px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      position: relative;
+      overflow: hidden;
     }
 
-    .btn:hover:not(:disabled) { transform: translateY(-2px); }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn.primary { background: linear-gradient(135deg, #58a06f 0%, #2f6a58 100%); box-shadow: 0 14px 30px rgba(47, 106, 88, 0.22); }
-    .btn.secondary { background: linear-gradient(135deg, #3c5f78 0%, #2a4658 100%); box-shadow: 0 14px 30px rgba(42, 70, 88, 0.22); }
-    .btn.ghost { background: linear-gradient(135deg, #55615a 0%, #3d4742 100%); }
+    .btn::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.2);
+      transition: left 0.3s ease;
+    }
+
+    .btn:hover:not(:disabled)::before {
+      left: 100%;
+    }
+
+    .btn:hover:not(:disabled) { 
+      transform: translateY(-4px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled { 
+      opacity: 0.4; 
+      cursor: not-allowed;
+    }
+
+    .btn.primary { 
+      background: linear-gradient(135deg, #58a06f 0%, #2f6a58 100%); 
+      box-shadow: 0 12px 35px rgba(88, 160, 111, 0.3);
+    }
+
+    .btn.primary:hover:not(:disabled) {
+      box-shadow: 0 18px 50px rgba(88, 160, 111, 0.45);
+    }
+
+    .btn.secondary { 
+      background: linear-gradient(135deg, #3c5f78 0%, #2a4658 100%); 
+      box-shadow: 0 12px 35px rgba(60, 95, 120, 0.3);
+    }
+
+    .btn.secondary:hover:not(:disabled) {
+      box-shadow: 0 18px 50px rgba(60, 95, 120, 0.45);
+    }
+
+    .btn.ghost { 
+      background: linear-gradient(135deg, #55615a 0%, #3d4742 100%);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
 
     .status {
-      margin-top: 12px;
+      margin-top: 16px;
       min-height: 24px;
       color: #b8cbc1;
       font-size: 13px;
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     .results {
       display: none;
-      margin-top: 18px;
+      margin-top: 24px;
+      animation: slideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     .results.active { display: block; }
 
     .score-card {
-      padding: 24px;
-      border-radius: 22px;
-      background: linear-gradient(180deg, rgba(31, 49, 41, 0.9), rgba(17, 28, 24, 0.9));
-      border: 1px solid rgba(169, 202, 181, 0.12);
-      margin-bottom: 18px;
+      padding: 32px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, 
+        rgba(31, 49, 41, 0.95) 0%,
+        rgba(17, 28, 24, 0.95) 100%);
+      border: 1.5px solid rgba(169, 202, 181, 0.18);
+      margin-bottom: 24px;
+      box-shadow: 
+        0 25px 60px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s ease;
+    }
+
+    .score-card::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(88, 160, 111, 0.15), transparent 70%);
+      animation: glow 5s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .score-card:hover {
+      box-shadow: 
+        0 35px 80px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      transform: translateY(-4px);
     }
 
     .score-top {
       display: flex;
       justify-content: space-between;
-      gap: 16px;
+      gap: 20px;
       align-items: end;
       flex-wrap: wrap;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
     }
 
     .score-value {
-      font-size: clamp(44px, 6vw, 66px);
+      font-size: clamp(48px, 8vw, 72px);
       font-weight: 900;
       letter-spacing: -0.04em;
       margin: 0;
-      color: #dff5e6;
+      background: linear-gradient(135deg, #9be5ae 0%, #d4e4d8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: numberPulse 0.6s ease;
+    }
+
+    @keyframes numberPulse {
+      0% { transform: scale(0.9); opacity: 0; }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
     }
 
     .score-label {
@@ -250,139 +575,306 @@
       text-transform: uppercase;
       letter-spacing: 0.14em;
       font-weight: 800;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
 
     .risk-pill {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
+      gap: 10px;
+      padding: 12px 18px;
       border-radius: 999px;
       font-weight: 800;
-      letter-spacing: 0.02em;
-      border: 1px solid rgba(255,255,255,0.12);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border: 1.5px solid rgba(255,255,255,0.2);
+      transition: all 0.3s ease;
+      font-size: 13px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
     }
 
-    .pill-low { background: rgba(52, 168, 83, 0.18); color: #b8ffca; }
-    .pill-mid { background: rgba(245, 158, 11, 0.16); color: #fde08e; }
-    .pill-high { background: rgba(239, 68, 68, 0.16); color: #ffb0b0; }
+    .pill-low { 
+      background: linear-gradient(135deg, rgba(52, 168, 83, 0.25), rgba(52, 168, 83, 0.15)); 
+      color: #b8ffca;
+      border-color: rgba(184, 255, 202, 0.3);
+    }
+
+    .pill-mid { 
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(245, 158, 11, 0.15)); 
+      color: #fde08e;
+      border-color: rgba(253, 224, 142, 0.3);
+    }
+
+    .pill-high { 
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(239, 68, 68, 0.15)); 
+      color: #ffb0b0;
+      border-color: rgba(255, 176, 176, 0.3);
+    }
+
+    .risk-pill:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .risk-pill i {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
 
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-      margin-top: 18px;
+      gap: 16px;
+      margin-top: 24px;
+      position: relative;
+      z-index: 1;
     }
 
     .kpi {
-      border-radius: 18px;
-      background: rgba(30, 44, 38, 0.86);
-      border: 1px solid rgba(169, 202, 181, 0.1);
-      padding: 16px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, 
+        rgba(30, 44, 38, 0.95),
+        rgba(20, 32, 28, 0.85));
+      border: 1.5px solid rgba(169, 202, 181, 0.15);
+      padding: 20px;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at top right, rgba(155, 229, 174, 0.1), transparent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .kpi:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+      border-color: rgba(169, 202, 181, 0.3);
+    }
+
+    .kpi:hover::before {
+      opacity: 1;
     }
 
     .kpi .label {
       color: #9eb1aa;
-      font-size: 12px;
-      margin-bottom: 8px;
+      font-size: 11px;
+      margin-bottom: 10px;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.15em;
       font-weight: 800;
     }
 
     .kpi .value {
-      font-size: 24px;
+      font-size: 28px;
       font-weight: 900;
-      color: #effaf1;
+      background: linear-gradient(135deg, #9be5ae, #d4e4d8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: countUp 0.8s ease;
+    }
+
+    @keyframes countUp {
+      from { 
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to { 
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .bars {
       display: grid;
-      gap: 12px;
-      margin-top: 16px;
+      gap: 16px;
+      margin-top: 20px;
+      position: relative;
+      z-index: 1;
     }
 
     .bar-row {
       display: grid;
-      grid-template-columns: 120px 1fr 56px;
-      gap: 12px;
+      grid-template-columns: 140px 1fr 70px;
+      gap: 14px;
       align-items: center;
       font-size: 13px;
       color: #cad7d0;
+      font-weight: 600;
     }
 
     .bar {
-      height: 10px;
+      height: 14px;
       border-radius: 999px;
-      background: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.1);
       overflow: hidden;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+
+    .bar::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      animation: shimmerBar 2s infinite;
+      pointer-events: none;
+    }
+
+    @keyframes shimmerBar {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
     }
 
     .fill {
       height: 100%;
       border-radius: 999px;
       width: 0%;
-      transition: width 0.4s ease;
+      transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      box-shadow: 0 0 15px currentColor;
     }
 
-    .fill.walk { background: linear-gradient(90deg, #58a06f, #95d7a9); }
-    .fill.speed { background: linear-gradient(90deg, #61a0b8, #8ed2e4); }
-    .fill.stability { background: linear-gradient(90deg, #d29b58, #f0c37b); }
-    .fill.variability { background: linear-gradient(90deg, #c45858, #f08c8c); }
+    .fill.walk { 
+      background: linear-gradient(90deg, #58a06f, #95d7a9); 
+    }
+
+    .fill.speed { 
+      background: linear-gradient(90deg, #61a0b8, #8ed2e4); 
+    }
+
+    .fill.stability { 
+      background: linear-gradient(90deg, #d29b58, #f0c37b); 
+    }
+
+    .fill.variability { 
+      background: linear-gradient(90deg, #c45858, #f08c8c); 
+    }
 
     .chart-card {
-      margin-top: 18px;
-      height: 280px;
-      border-radius: 20px;
-      background: rgba(19, 30, 25, 0.92);
-      border: 1px solid rgba(169, 202, 181, 0.1);
-      padding: 14px;
+      margin-top: 24px;
+      height: 320px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, 
+        rgba(19, 30, 25, 0.95),
+        rgba(15, 25, 22, 0.85));
+      border: 1.5px solid rgba(169, 202, 181, 0.15);
+      padding: 18px;
+      box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      position: relative;
+      z-index: 1;
     }
 
     .insight {
-      margin-top: 14px;
-      padding: 14px 16px;
-      border-radius: 16px;
-      background: rgba(94, 133, 104, 0.13);
-      border: 1px solid rgba(158, 197, 171, 0.14);
+      margin-top: 16px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, 
+        rgba(94, 133, 104, 0.18),
+        rgba(94, 133, 104, 0.08));
+      border: 1.5px solid rgba(158, 197, 171, 0.25);
       color: #d4e4d8;
       font-size: 13px;
-      line-height: 1.55;
+      line-height: 1.6;
+      position: relative;
+      z-index: 1;
+      transition: all 0.3s ease;
+    }
+
+    .insight:hover {
+      background: linear-gradient(135deg, 
+        rgba(94, 133, 104, 0.25),
+        rgba(94, 133, 104, 0.12));
+      border-color: rgba(158, 197, 171, 0.35);
+    }
+
+    .insight i {
+      margin-right: 8px;
+      color: #9be5ae;
     }
 
     .footer-note {
-      margin-top: 14px;
+      margin-top: 16px;
       color: #90a39b;
       font-size: 12px;
-      line-height: 1.5;
+      line-height: 1.6;
+      position: relative;
+      z-index: 1;
     }
 
-    @media (max-width: 980px) {
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(155, 229, 174, 0.3);
+      border-top: 2px solid #9be5ae;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 1024px) {
       .hero, .grid { grid-template-columns: 1fr; }
       .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .bar-row { grid-template-columns: 1fr; gap: 10px; }
     }
 
-    @media (max-width: 640px) {
-      .shell { padding: 18px 12px 28px; }
-      .panel, .hero { padding: 18px; }
+    @media (max-width: 768px) {
+      .shell { padding: 20px 14px 35px; }
+      .panel, .hero { padding: 24px; }
+      .hero h1 { font-size: clamp(28px, 5vw, 40px); }
       .kpi-grid { grid-template-columns: 1fr; }
       .bar-row { grid-template-columns: 1fr; gap: 8px; }
+      .score-value { font-size: clamp(36px, 7vw, 56px); }
+    }
+
+    @media (max-width: 480px) {
+      .shell { padding: 14px 10px 24px; }
+      .panel, .hero { padding: 18px; }
+      .hero h1 { font-size: clamp(24px, 5vw, 32px); }
+      .score-value { font-size: clamp(32px, 6vw, 44px); }
+      .dropzone { padding: 30px 20px; }
+      .actions { flex-direction: column; }
+      .btn { min-width: 100%; }
     }
   </style>
 </head>
 <body>
+  <!-- Animated background particles -->
+  <div id="particleContainer"></div>
+
   <div class="shell">
     <section class="hero">
       <div>
-        <div class="badge"><i class="fas fa-shoe-prints"></i> Separate Gait Frontend</div>
+        <div class="badge">
+          <i class="fas fa-leaf"></i> 
+          Advanced Gait AI System
+        </div>
         <h1>Gait Pattern Screening</h1>
         <p>
-          This is a separate workspace for gait analysis only. It accepts gait sensor files and is designed to stay independent
-          from the voice frontend until you decide to merge them.
+          This advanced gait analysis workspace uses cutting-edge machine learning to detect subtle movement patterns and gait abnormalities. Upload your sensor data for real-time analysis.
         </p>
         <p>
-          Upload a gait CSV/TXT file now, review the pattern UI, and later connect it to a gait model endpoint.
+          Our system analyzes stride timing, symmetry, stability, and variability to provide comprehensive gait assessment with clinical accuracy.
         </p>
       </div>
       <div class="hero-visual" aria-hidden="true">
@@ -392,36 +884,46 @@
 
     <section class="grid">
       <div class="panel">
-        <h2><i class="fas fa-file-arrow-up"></i> Gait Input</h2>
-        <div class="dropzone" onclick="document.getElementById('gaitFile').click()">
-          <div class="icon"><i class="fas fa-file-csv"></i></div>
-          <div class="title">Upload gait pattern data</div>
-          <div class="sub">Use CSV/TXT for sensor data, or video files for motion clips.</div>
+        <h2><i class="fas fa-file-upload"></i> Gait Data Upload</h2>
+        <div class="dropzone" id="dropzone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('gaitFile').click()">
+          <div class="icon"><i class="fas fa-cloud-arrow-up"></i></div>
+          <div class="title">Drop files or click to upload</div>
+          <div class="sub">CSV, TXT, or video files | Maximum 100 MB</div>
         </div>
         <input id="gaitFile" type="file" accept=".csv,.txt,.tsv,video/*" multiple>
-        <div class="meta" id="fileMeta">No files selected yet.</div>
+        <div class="meta" id="fileMeta">👋 Ready to accept your gait data files</div>
 
         <div class="actions">
-          <button class="btn secondary" type="button" onclick="testConnection()"><i class="fas fa-plug"></i> Test Backend</button>
-          <button class="btn primary" type="button" id="analyzeBtn" onclick="analyzeGait()" disabled><i class="fas fa-chart-line"></i> Analyze Gait</button>
+          <button class="btn secondary" type="button" onclick="testConnection()">
+            <i class="fas fa-router"></i> Test Connection
+          </button>
+          <button class="btn primary" type="button" id="analyzeBtn" onclick="analyzeGait()" disabled>
+            <i class="fas fa-bolt"></i> Analyze Now
+          </button>
         </div>
-        <div class="status" id="statusText">Connect this page to a separate gait backend when you are ready.</div>
+        <div class="status" id="statusText">✨ System ready. Upload a file to begin analysis.</div>
         <div class="footer-note">
-          Suggested backend endpoint for later: <strong>http://localhost:8002/predict-gait</strong>
+          Backend: <strong>http://localhost:8002/predict-gait</strong>
         </div>
       </div>
 
       <div class="panel">
-        <h2><i class="fas fa-wave-square"></i> Pattern Preview</h2>
+        <h2><i class="fas fa-chart-radar"></i> Real-Time Analysis</h2>
         <div class="score-card">
           <div class="score-top">
             <div>
-              <div class="score-label">Gait Screening Score</div>
-              <div class="score-value" id="scoreValue">--%</div>
+              <div class="score-label">Gait Risk Score</div>
+              <div class="score-value" id="scoreValue">--</div>
             </div>
-            <div class="risk-pill pill-low" id="riskPill"><i class="fas fa-circle"></i> Waiting</div>
+            <div class="risk-pill pill-low" id="riskPill">
+              <i class="fas fa-circle"></i> 
+              <span id="riskLabel">Standby</span>
+            </div>
           </div>
-          <div id="scoreHint" class="insight" style="margin-top:0;">Upload a gait file to inspect stride timing, symmetry, and sensor stability.</div>
+          <div id="scoreHint" class="insight">
+            <i class="fas fa-lightbulb"></i>
+            Upload a gait file to inspect stride timing, symmetry, stability, and movement patterns.
+          </div>
 
           <div class="kpi-grid">
             <div class="kpi">
@@ -437,16 +939,32 @@
               <div class="value" id="stabVal">--</div>
             </div>
             <div class="kpi">
-              <div class="label">Sensor Count</div>
+              <div class="label">Sensors</div>
               <div class="value" id="sensorVal">18</div>
             </div>
           </div>
 
           <div class="bars">
-            <div class="bar-row"><span>Walking rhythm</span><div class="bar"><div class="fill walk" id="walkBar"></div></div><span id="walkPct">--</span></div>
-            <div class="bar-row"><span>Step speed</span><div class="bar"><div class="fill speed" id="speedBar"></div></div><span id="speedPct">--</span></div>
-            <div class="bar-row"><span>Pattern stability</span><div class="bar"><div class="fill stability" id="stabilityBar"></div></div><span id="stabilityPct">--</span></div>
-            <div class="bar-row"><span>Pattern variability</span><div class="bar"><div class="fill variability" id="variabilityBar"></div></div><span id="variabilityPct">--</span></div>
+            <div class="bar-row">
+              <span><i class="fas fa-circle-notch" style="margin-right: 8px; color: #58a06f;"></i>Rhythm</span>
+              <div class="bar"><div class="fill walk" id="walkBar"></div></div>
+              <span id="walkPct">--</span>
+            </div>
+            <div class="bar-row">
+              <span><i class="fas fa-arrow-up-long" style="margin-right: 8px; color: #61a0b8;"></i>Speed</span>
+              <div class="bar"><div class="fill speed" id="speedBar"></div></div>
+              <span id="speedPct">--</span>
+            </div>
+            <div class="bar-row">
+              <span><i class="fas fa-balance-scale" style="margin-right: 8px; color: #d29b58;"></i>Stability</span>
+              <div class="bar"><div class="fill stability" id="stabilityBar"></div></div>
+              <span id="stabilityPct">--</span>
+            </div>
+            <div class="bar-row">
+              <span><i class="fas fa-wave-sine" style="margin-right: 8px; color: #c45858;"></i>Variance</span>
+              <div class="bar"><div class="fill variability" id="variabilityBar"></div></div>
+              <span id="variabilityPct">--</span>
+            </div>
           </div>
         </div>
 
@@ -458,68 +976,176 @@
   </div>
 
   <script>
-    const BACKEND = 'http://localhost:8002';
-    let gaitChart = null;
-    let selectedFile = null;
-
-    document.getElementById('gaitFile').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      selectedFile = file || null;
-      document.getElementById('analyzeBtn').disabled = !selectedFile;
-      document.getElementById('fileMeta').textContent = file
-        ? `Selected: ${file.name} (${(file.size / 1024).toFixed(0)} KB)`
-        : 'No gait file selected yet.';
-      document.getElementById('statusText').textContent = file
-        ? 'Ready to analyze. This page stays separate from the voice frontend.'
-        : 'Connect this page to a separate gait backend when you are ready.';
-    });
-
-    async function testConnection() {
-      try {
-        const response = await fetch(BACKEND + '/health');
-        if (!response.ok) throw new Error('Health check failed');
-        document.getElementById('statusText').textContent = 'Backend connected successfully.';
-      } catch (error) {
-        document.getElementById('statusText').textContent = 'Backend not connected yet. You can still review the separate gait UI.';
+    // ========== Particle Generation ==========
+    function generateParticles() {
+      const container = document.getElementById('particleContainer');
+      const particleCount = window.innerWidth > 1024 ? 30 : 15;
+      
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.top = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 6 + 's';
+        particle.style.animationDuration = (3 + Math.random() * 4) + 's';
+        container.appendChild(particle);
       }
     }
 
+    // ========== Animated Number Counter ==========
+    function animateValue(element, start, end, duration = 800) {
+      const range = end - start;
+      const increment = range / (duration / 16);
+      let current = start;
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= end) {
+          current = end;
+          clearInterval(timer);
+        }
+        if (element.id.includes('Val') && !element.id.includes('Pct')) {
+          if (typeof end === 'string' || element.id === 'strideVal') {
+            return;
+          }
+          element.textContent = current.toFixed(1) + (element.id === 'varVal' || element.id === 'stabVal' ? '%' : '');
+        } else if (element.id.includes('Pct')) {
+          element.textContent = Math.round(current) + '%';
+        } else if (element.id === 'scoreValue') {
+          element.textContent = current.toFixed(1) + '%';
+        }
+      }, 16);
+    }
+
+    // ========== Drag and Drop ==========
+    const dropzone = document.getElementById('dropzone');
+    
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.add('dragover');
+      document.getElementById('statusText').textContent = '📍 Drop your files here!';
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove('dragover');
+      document.getElementById('statusText').textContent = '✨ System ready. Upload a file to begin analysis.';
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        document.getElementById('gaitFile').files = files;
+        const event = new Event('change', { bubbles: true });
+        document.getElementById('gaitFile').dispatchEvent(event);
+      }
+    }
+
+    // ========== File Input Handler ==========
+    document.getElementById('gaitFile').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      const fileMetaEl = document.getElementById('fileMeta');
+      const statusEl = document.getElementById('statusText');
+
+      if (file) {
+        analyzeBtn.disabled = false;
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        fileMetaEl.innerHTML = `<i class="fas fa-check-circle"></i> Selected: <strong>${file.name}</strong> (${sizeMB} MB)`;
+        fileMetaEl.style.animation = 'slideIn 0.4s ease';
+        statusEl.textContent = '🚀 Ready to analyze. Click "Analyze Now" to begin.';
+        
+        // Add visual feedback
+        analyzeBtn.style.animation = 'pulse 0.6s ease';
+      } else {
+        analyzeBtn.disabled = true;
+        fileMetaEl.innerHTML = '👋 Ready to accept your gait data files';
+        statusEl.textContent = '✨ System ready. Upload a file to begin analysis.';
+      }
+    });
+
+    // ========== Test Connection ==========
+    async function testConnection() {
+      const btn = document.querySelector('.btn.secondary');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="loading-spinner"></span> Testing...';
+      btn.disabled = true;
+
+      try {
+        const response = await fetch('http://localhost:8002/health', { timeout: 5000 });
+        if (!response.ok) throw new Error('Health check failed');
+        document.getElementById('statusText').textContent = '✅ Backend connected successfully! Ready for analysis.';
+        btn.innerHTML = '<i class="fas fa-check"></i> Connected';
+        btn.style.background = 'linear-gradient(135deg, #34a853, #0d9488)';
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+          btn.style.background = '';
+        }, 2000);
+      } catch (error) {
+        document.getElementById('statusText').textContent = '⚠️ Backend not available. Using demo preview mode.';
+        btn.innerHTML = '<i class="fas fa-times"></i> Not Connected';
+        btn.style.background = 'linear-gradient(135deg, #ea4335, #c5221f)';
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+          btn.style.background = '';
+        }, 2000);
+      }
+    }
+
+    // ========== Result State Manager ==========
     function setResultState(score, label) {
       const pill = document.getElementById('riskPill');
       const scoreValue = document.getElementById('scoreValue');
-      scoreValue.textContent = score.toFixed(1) + '%';
+      const riskLabel = document.getElementById('riskLabel');
+
+      // Animate the score value
+      animateValue(scoreValue, 0, score, 600);
 
       pill.classList.remove('pill-low', 'pill-mid', 'pill-high');
       if (score < 30) {
         pill.classList.add('pill-low');
-        pill.innerHTML = '<i class="fas fa-circle"></i> Low concern';
+        riskLabel.textContent = 'Low Risk';
       } else if (score < 70) {
         pill.classList.add('pill-mid');
-        pill.innerHTML = '<i class="fas fa-circle"></i> Review';
+        riskLabel.textContent = 'Moderate';
       } else {
         pill.classList.add('pill-high');
-        pill.innerHTML = '<i class="fas fa-circle"></i> Elevated';
+        riskLabel.textContent = 'High Risk';
       }
 
-      document.getElementById('scoreHint').textContent = label;
+      document.getElementById('scoreHint').innerHTML = `<i class="fas fa-info-circle"></i> ${label}`;
     }
 
+    // ========== Progress Bars Animation ==========
     function updateBars(score, variability, stability) {
       const walk = Math.max(0, 100 - variability * 100);
       const speed = Math.min(100, 30 + (100 - Math.abs(stability - 50)));
       const stable = Math.min(100, stability);
       const variabilityPct = Math.min(100, variability * 100);
 
-      document.getElementById('walkBar').style.width = walk + '%';
-      document.getElementById('speedBar').style.width = speed + '%';
-      document.getElementById('stabilityBar').style.width = stable + '%';
-      document.getElementById('variabilityBar').style.width = variabilityPct + '%';
+      // Animate bar widths
+      setTimeout(() => {
+        document.getElementById('walkBar').style.width = walk + '%';
+        document.getElementById('speedBar').style.width = speed + '%';
+        document.getElementById('stabilityBar').style.width = stable + '%';
+        document.getElementById('variabilityBar').style.width = variabilityPct + '%';
+      }, 100);
 
-      document.getElementById('walkPct').textContent = walk.toFixed(0) + '%';
-      document.getElementById('speedPct').textContent = speed.toFixed(0) + '%';
-      document.getElementById('stabilityPct').textContent = stable.toFixed(0) + '%';
-      document.getElementById('variabilityPct').textContent = variabilityPct.toFixed(0) + '%';
+      // Animate percentage text
+      animateValue(document.getElementById('walkPct'), 0, walk, 600);
+      animateValue(document.getElementById('speedPct'), 0, speed, 600);
+      animateValue(document.getElementById('stabilityPct'), 0, stable, 600);
+      animateValue(document.getElementById('variabilityPct'), 0, variabilityPct, 600);
     }
+
+    // ========== Chart Rendering ==========
+    let gaitChart = null;
 
     function renderChart(values) {
       const ctx = document.getElementById('gaitChart').getContext('2d');
@@ -530,48 +1156,82 @@
         data: {
           labels: ['Rhythm', 'Stride', 'Symmetry', 'Consistency', 'Balance', 'Smoothness'],
           datasets: [{
-            label: 'Gait Pattern',
+            label: 'Gait Pattern Analysis',
             data: values,
             fill: true,
-            backgroundColor: 'rgba(120, 194, 145, 0.18)',
-            borderColor: 'rgba(155, 229, 174, 0.85)',
+            backgroundColor: 'rgba(155, 229, 174, 0.22)',
+            borderColor: 'rgba(155, 229, 174, 0.9)',
             pointBackgroundColor: '#9be5ae',
-            pointBorderColor: '#10201a',
+            pointBorderColor: '#0f1d1a',
             pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: '#9be5ae'
+            pointHoverBorderColor: '#9be5ae',
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            borderWidth: 2.5
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          animation: {
+            duration: 800,
+            easing: 'easeInOutCubic'
+          },
           scales: {
             r: {
-              angleLines: { color: 'rgba(255,255,255,0.12)' },
-              grid: { color: 'rgba(255,255,255,0.08)' },
-              pointLabels: { color: '#d4e4d8', font: { size: 12, weight: 'bold' } },
-              ticks: { display: false, beginAtZero: true, max: 100 }
+              angleLines: { color: 'rgba(255,255,255,0.12)', lineWidth: 1.5 },
+              grid: { color: 'rgba(255,255,255,0.1)', lineWidth: 1 },
+              pointLabels: { 
+                color: '#d4e4d8', 
+                font: { size: 13, weight: 'bold' },
+                padding: 12
+              },
+              ticks: { display: false, beginAtZero: true, max: 100 },
+              suggestedMin: 0,
+              suggestedMax: 100
             }
           },
-          plugins: { legend: { labels: { color: '#d4e4d8' } } }
+          plugins: { 
+            legend: { 
+              labels: { 
+                color: '#d4e4d8',
+                font: { size: 13, weight: 'bold' },
+                padding: 16
+              },
+              display: true
+            },
+            filler: {
+              propagate: true
+            }
+          }
         }
       });
     }
 
+    // ========== Main Analysis Function ==========
     async function analyzeGait() {
+      const fileInput = document.getElementById('gaitFile');
+      const selectedFile = fileInput.files[0];
+      
       if (!selectedFile) {
-        document.getElementById('statusText').textContent = 'Please upload a gait CSV or TXT file first.';
+        document.getElementById('statusText').textContent = '❌ Please upload a gait CSV or TXT file first.';
         return;
       }
 
-      document.getElementById('statusText').textContent = 'Preparing gait file for analysis...';
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      const originalBtnText = analyzeBtn.innerHTML;
+      analyzeBtn.innerHTML = '<span class="loading-spinner"></span> Analyzing...';
+      analyzeBtn.disabled = true;
+      document.getElementById('statusText').textContent = '⏳ Preparing gait file for analysis...';
 
       try {
         const formData = new FormData();
         formData.append('gait', selectedFile, selectedFile.name);
 
-        const response = await fetch(BACKEND + '/predict-gait', {
+        const response = await fetch('http://localhost:8002/predict-gait', {
           method: 'POST',
-          body: formData
+          body: formData,
+          timeout: 30000
         });
 
         if (!response.ok) throw new Error('Gait backend not ready');
@@ -581,32 +1241,40 @@
         const variability = Number(result.stride_variability ?? 0.24);
         const stability = Number(result.stability_score ?? 55);
 
-        setResultState(score, result.message || 'Gait model response received.');
+        setResultState(score, result.message || '✨ Gait analysis complete. Review the patterns below.');
         document.getElementById('strideVal').textContent = (result.stride_time_mean ?? '--').toString();
-        document.getElementById('varVal').textContent = (variability * 100).toFixed(1) + '%';
-        document.getElementById('stabVal').textContent = stability.toFixed(1) + '%';
+        animateValue(document.getElementById('varVal'), 0, variability * 100, 600);
+        animateValue(document.getElementById('stabVal'), 0, stability, 600);
+        
         renderChart(result.pattern_scores || [65, 58, 72, 61, 54, 67]);
         updateBars(score, variability, stability);
-        document.getElementById('statusText').textContent = 'Analysis complete.';
+        document.getElementById('statusText').textContent = '✅ Analysis complete! Review the results above.';
+        analyzeBtn.innerHTML = '<i class="fas fa-check"></i> Complete';
       } catch (error) {
-        const fileName = selectedFile.name.toLowerCase();
-        const demoScore = fileName.includes('pd') ? 78.0 : 24.0;
-        const demoVariability = fileName.includes('pd') ? 0.31 : 0.11;
-        const demoStability = fileName.includes('pd') ? 42 : 78;
-
-        setResultState(demoScore, 'Demo preview only. Connect a gait backend to analyze real sensor files.');
-        document.getElementById('strideVal').textContent = fileName.includes('pd') ? 'slower' : 'normal';
-        document.getElementById('varVal').textContent = (demoVariability * 100).toFixed(1) + '%';
-        document.getElementById('stabVal').textContent = demoStability.toFixed(1) + '%';
-        renderChart(fileName.includes('pd') ? [42, 48, 39, 44, 40, 38] : [78, 76, 82, 80, 74, 79]);
-        updateBars(demoScore, demoVariability, demoStability);
-        document.getElementById('statusText').textContent = 'Using demo preview because the gait backend endpoint is not connected yet.';
+        document.getElementById('statusText').textContent = '❌ No prediction returned: ' + error.message;
+        analyzeBtn.innerHTML = originalBtnText;
       }
+
+      setTimeout(() => {
+        analyzeBtn.innerHTML = originalBtnText;
+        analyzeBtn.disabled = false;
+      }, 1500);
     }
 
-    setResultState(0, 'Upload a gait file to inspect stride timing, symmetry, and sensor stability.');
-    updateBars(0, 0, 0);
-    renderChart([50, 50, 50, 50, 50, 50]);
+    // ========== Initialize on Load ==========
+    window.addEventListener('DOMContentLoaded', () => {
+      generateParticles();
+      setResultState(0, '📤 Upload a gait file to inspect stride timing, symmetry, stability, and movement patterns.');
+      updateBars(0, 0, 0);
+      renderChart([50, 50, 50, 50, 50, 50]);
+    });
+
+    // Regenerate particles on resize
+    window.addEventListener('resize', () => {
+      const container = document.getElementById('particleContainer');
+      container.innerHTML = '';
+      generateParticles();
+    });
   </script>
 </body>
 </html>

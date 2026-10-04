@@ -55,6 +55,16 @@ Your Parkinson's voice detection system is now fully functional with real ML pre
 
 ## 🚀 Quick Start
 
+### One-command fused app
+
+On Windows, run `start_all.bat`. It starts the fused backend and opens:
+
+```text
+http://127.0.0.1:8008/fused
+```
+
+For phone capture, connect the phone and PC to the same Wi-Fi and open the PC LAN address with `/fused`, for example `http://192.168.29.242:8008/fused`.
+
 ### Start the Server
 ```bash
 cd backend

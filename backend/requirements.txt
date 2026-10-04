@@ -10,3 +10,5 @@ tensorflow
 scipy
 soundfile
 xgboost
+opencv-python
+mediapipe==0.10.14

@@ -65,3 +65,6 @@ backend/tf_env/
 
 voice/
 *.wav
+generated_samples/
+temp/
+backend/temp_audio/remote_gait/
